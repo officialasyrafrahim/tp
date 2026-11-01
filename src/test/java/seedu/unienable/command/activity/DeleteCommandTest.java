@@ -74,13 +74,23 @@ class DeleteCommandTest {
 
     @Test
     void execute_rejectsOutOfRangeIndexWithValidRange() throws Exception {
+        add("First", "2026-10-12", "08:00", "09:00", "LOW");
+        add("Second", "2026-10-13", "08:00", "09:00", "LOW");
+        var exception = assertThrows(UniEnableException.class,
+                () -> parser.parse("delete 5").execute(activities, storage));
+        assertEquals("[WARNING] No activity at index 5. Valid range: 1 to 2.", exception.getMessage());
+    }
+
+    //@@author lukelouyu
+    @Test
+    void execute_rejectsOutOfRangeIndexWithSingleActivityMessage() throws Exception {
         add("Solo", "2026-10-12", "08:00", "09:00", "LOW");
         var exception = assertThrows(UniEnableException.class,
                 () -> parser.parse("delete 5").execute(activities, storage));
-        assertTrue(exception.getMessage().startsWith("[WARNING]"));
-        assertTrue(exception.getMessage().contains("No activity at index 5"));
-        assertTrue(exception.getMessage().contains("Valid range: 1 to 1"));
+        assertEquals("[WARNING] No activity at index 5. There is only one item.", exception.getMessage());
     }
+
+    //@@author officialasyrafrahim
 
     @Test
     void execute_rejectsIndexOnEmptyList() {
