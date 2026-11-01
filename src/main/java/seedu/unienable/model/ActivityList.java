@@ -232,9 +232,26 @@ public class ActivityList {
         }
         if (displayedIndex < 1 || displayedIndex > canonical.size()) {
             throw new InvalidIndexException("[WARNING] No activity at index " + displayedIndex
-                    + ". Valid range: 1 to " + canonical.size() + ".");
+                    + ". " + describeValidIndexes(canonical.size()));
         }
         return canonical.get(displayedIndex - 1);
+    }
+    //@@author
+
+    //@@author lukelouyu
+    /**
+     * Describes which indexes the user may enter, replacing the awkward range
+     * "1 to 1" with a plain sentence when only one activity exists.
+     *
+     * @param activityCount number of activities in the list; at least one.
+     * @return sentence appended to the invalid-index warning.
+     */
+    private static String describeValidIndexes(int activityCount) {
+        assert activityCount >= 1 : "An empty list has its own warning and no valid indexes.";
+        if (activityCount == 1) {
+            return "There is only one item.";
+        }
+        return "Valid range: 1 to " + activityCount + ".";
     }
     //@@author
 
