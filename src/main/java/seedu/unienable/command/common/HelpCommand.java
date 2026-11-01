@@ -80,7 +80,7 @@ public class HelpCommand extends Command {
                       - IMP = importance; URG = urgency; COM = commitment.
                       - Ratings are optional whole numbers from 1 to 5; missing ratings display -.
                       - New activities start incomplete and save automatically.
-                      - Ended activities can be added, but cannot subsequently be edited.
+                      - Once an activity ends, it cannot be edited or rescheduled.
 
                     Examples:
                       add n/Study d/2030-12-01 s/10:00 e/11:00

@@ -113,6 +113,17 @@ class HelpCommandTest {
         }));
     }
 
+    //@@author lukelouyu
+    @Test
+    void execute_addTopic_saysEndedActivitiesCannotBeAddedOrEdited() throws Exception {
+        String message = parser.parse("help add").execute(new ActivityList(), noWrites).getMessage();
+
+        assertTrue(message.contains("ended activities cannot be added."), message);
+        assertTrue(message.contains("Once an activity ends, it cannot be edited or rescheduled."), message);
+        assertFalse(message.contains("Ended activities can be added"), message);
+    }
+    //@@author Atharva005
+
     @Test
     void removedSaveCommand_isAbsentFromHelpAndParser() {
         String menu = new HelpCommand().execute(new ActivityList(), noWrites).getMessage();
