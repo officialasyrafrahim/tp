@@ -9,19 +9,22 @@ import java.util.regex.Pattern;
 import seedu.unienable.exception.ParseException;
 
 /**
- * Catches likely misspellings of activity fields without treating every slash in a name as a field.
+ * Requires every slash token to be a supported activity field and suggests likely spelling corrections.
  */
 final class ActivityParameterValidator {
-    private static final Pattern PARAMETER = Pattern.compile("(?i)(?<!\\S)([a-z0-9]+)/");
+    private static final Pattern PARAMETER = Pattern.compile("([^\\s/]*)/");
     private static final List<String> PREFIXES = List.of("n", "d", "s", "e", "dem", "imp", "urg", "com", "overlap");
+    private static final List<String> UNSUPPORTED_PREFIXES = List.of("urgency", "importance", "commitment", "priority");
 
-    /** Prevents instantiation of this shared parser helper. */
+    /**
+     * Prevents instantiation of this shared parser helper.
+     */
     private ActivityParameterValidator() {
     }
 
     /**
-     * Rejects a one-edit alphanumeric typo in a multi-letter prefix, including an adjacent transposition.
-     * Ordinary slash text such as and/or, w/o and module codes remains valid name content.
+     * Checks every slash, including nested slash text inside a name. Supported prefixes
+     * must start at a whitespace boundary. Literal slashes and escaping are unsupported.
      *
      * @param arguments unparsed activity fields.
      * @throws ParseException when a token is likely a misspelled parameter.
@@ -31,7 +34,20 @@ final class ActivityParameterValidator {
         while (matcher.find()) {
             String token = matcher.group(1).toLowerCase(Locale.ROOT);
             if (PREFIXES.contains(token)) {
+                if (matcher.start() > 0 && !Character.isWhitespace(arguments.charAt(matcher.start() - 1))) {
+                    throw new ParseException("[WARNING] Parameter '" + token + "/' must be preceded by whitespace.");
+                }
                 continue;
+            }
+            if (UNSUPPORTED_PREFIXES.contains(token)) {
+                String replacement = switch (token) {
+                case "urgency" -> "urg";
+                case "importance" -> "imp";
+                case "commitment" -> "com";
+                default -> null;
+                };
+                String suggestion = replacement == null ? "" : " Did you mean '" + replacement + "/'?";
+                throw new ParseException("[WARNING] Unknown parameter '" + token + "/'." + suggestion);
             }
             for (String prefix : PREFIXES) {
                 if (prefix.length() > 1 && token.length() > 1 && isOneEditAway(token, prefix)) {
@@ -39,10 +55,15 @@ final class ActivityParameterValidator {
                             + "/'. Did you mean '" + prefix + "/'?");
                 }
             }
+            throw new ParseException("[WARNING] Unknown parameter '" + token + "/'. "
+                    + "Valid prefixes: n/, d/, s/, e/, dem/, imp/, urg/, com/, overlap/. "
+                    + "Use spaces or hyphens instead of literal slashes in names.");
         }
     }
 
-    /** Parses the explicit, per-command permission to keep an overlapping activity. */
+    /**
+     * Parses the explicit, per-command permission to keep an overlapping activity.
+     */
     static boolean allowsOverlap(String value) throws ParseException {
         if (value == null) {
             return false;
@@ -53,7 +74,9 @@ final class ActivityParameterValidator {
         return true;
     }
 
-    /** Computes edit distance with adjacent swaps for the short field-prefix tokens. */
+    /**
+     * Returns whether a token is one edit from a prefix, counting an adjacent swap as one edit.
+     */
     private static boolean isOneEditAway(String token, String prefix) {
         if (Math.abs(token.length() - prefix.length()) > 1) {
             return false;

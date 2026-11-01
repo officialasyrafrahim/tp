@@ -1,5 +1,6 @@
 //@@author lukelouyu
 package seedu.unienable.command.accessibility.connection.logic;
+
 //@@author
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -27,7 +28,7 @@ import seedu.unienable.storage.FacilityStorage;
 /**
  * Checks route building and the separate DijkstraSolver through DijkstraShortestPath.findRoute().
  * Checks all 81 campus pairs against a manual distance matrix and validates the returned route segments.
- * The bundled graph has nine hubs and ten undirected links, including AS4-AS7 at 50 metres.
+ * The bundled graph has nine hubs and ten undirected links, including AS4-AS7 at 50 meters.
  * Expected values are fixed test data; no reference shortest-path algorithm runs in these tests.
  */
 class DijkstraShortestPathTest {
@@ -37,7 +38,7 @@ class DijkstraShortestPathTest {
     private static final List<String> HUBS = List.of("AS1", "AS2", "AS3", "AS4", "AS5", "AS6", "AS7", "AS8", "CLB");
 
     /**
-     * Shortest distances in metres for the bundled graph, with zero on the diagonal.
+     * Shortest distances in meters for the bundled graph, with zero on the diagonal.
      */
     private static final long[][] EXPECTED_DISTANCES = {
         // AS1, AS2, AS3, AS4, AS5, AS6, AS7, AS8, CLB
@@ -135,6 +136,5 @@ class DijkstraShortestPathTest {
         assertEquals(route.distanceInMetres(), route.segments().stream()
                 .mapToLong(Connection::getDistanceInMetres).sum());
     }
-
 }
 //@@author

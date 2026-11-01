@@ -19,54 +19,54 @@ final class DijkstraSolver {
     /**
      * Best known distance to each vertex; Long.MAX_VALUE denotes an unreachable vertex.
      */
-    private final long[] dist;
+    private final long[] distances;
 
     /**
      * Predecessor vertex indexes used to reconstruct the chosen route.
      */
-    private final int[] previous;
+    private final int[] previousVertices;
 
     /**
      * Original links joining each vertex to its predecessor.
      */
-    private final Connection[] previousConnection;
+    private final Connection[] previousConnections;
     private final Set<Integer> settled = new HashSet<>();
-    private final PriorityQueue<Node> pq;
+    private final PriorityQueue<Node> priorityQueue;
     private final int vertexCount;
-    private List<List<Node>> adj;
+    private List<List<Node>> adjacency;
 
     /**
      * Creates fresh search state for a graph containing the specified number of vertices.
      */
     DijkstraSolver(int vertexCount) {
         this.vertexCount = vertexCount;
-        dist = new long[vertexCount];
-        previous = new int[vertexCount];
-        previousConnection = new Connection[vertexCount];
-        Arrays.fill(previous, -1);
-        pq = new PriorityQueue<>(Math.max(1, vertexCount), new Node());
+        distances = new long[vertexCount];
+        previousVertices = new int[vertexCount];
+        previousConnections = new Connection[vertexCount];
+        Arrays.fill(previousVertices, -1);
+        priorityQueue = new PriorityQueue<>(Math.max(1, vertexCount), Comparator.comparingLong(Node::cost));
     }
 
     /**
      * Calculates shortest distances and records predecessors from the source vertex.
      * Search state belongs to this solver, which is created separately for each route query.
      */
-    void dijkstra(List<List<Node>> adj, int src) {
-        this.adj = adj;
-        Arrays.fill(dist, Long.MAX_VALUE);
-        pq.add(new Node(src, 0));
-        dist[src] = 0;
+    void computeShortestPaths(List<List<Node>> adjacency, int source) {
+        this.adjacency = adjacency;
+        Arrays.fill(distances, Long.MAX_VALUE);
+        priorityQueue.add(new Node(source, 0));
+        distances[source] = 0;
 
         while (settled.size() != vertexCount) {
-            if (pq.isEmpty()) {
+            if (priorityQueue.isEmpty()) {
                 return;
             }
-            int u = pq.remove().node;
-            if (settled.contains(u)) {
+            int vertex = priorityQueue.remove().node;
+            if (settled.contains(vertex)) {
                 continue;
             }
-            settled.add(u);
-            eNeighbours(u);
+            settled.add(vertex);
+            relaxNeighbors(vertex);
         }
     }
 
@@ -74,38 +74,38 @@ final class DijkstraSolver {
      * Returns the calculated distance, or Long.MAX_VALUE if the vertex is unreachable.
      */
     long getDistance(int vertex) {
-        return dist[vertex];
+        return distances[vertex];
     }
 
     /**
      * Returns the predecessor vertex, or -1 when no predecessor was recorded.
      */
     int getPrevious(int vertex) {
-        return previous[vertex];
+        return previousVertices[vertex];
     }
 
     /**
      * Returns the original link to the predecessor, or null when none was recorded.
      */
     Connection getPreviousConnection(int vertex) {
-        return previousConnection[vertex];
+        return previousConnections[vertex];
     }
 
     /**
      * Relaxes every not-yet-settled neighbor of the current vertex.
      */
-    private void eNeighbours(int u) {
-        for (Node v : adj.get(u)) {
-            if (settled.contains(v.node)) {
+    private void relaxNeighbors(int vertex) {
+        for (Node neighbor : adjacency.get(vertex)) {
+            if (settled.contains(neighbor.node)) {
                 continue;
             }
             // Positive int edge weights and int vertex indexes keep simple path totals within long.
-            long candidate = dist[u] + v.cost;
-            if (candidate < dist[v.node]) {
-                dist[v.node] = candidate;
-                previous[v.node] = u;
-                previousConnection[v.node] = v.connection;
-                pq.add(new Node(v.node, dist[v.node]));
+            long candidate = distances[vertex] + neighbor.cost;
+            if (candidate < distances[neighbor.node]) {
+                distances[neighbor.node] = candidate;
+                previousVertices[neighbor.node] = vertex;
+                previousConnections[neighbor.node] = neighbor.connection;
+                priorityQueue.add(new Node(neighbor.node, distances[neighbor.node]));
             }
         }
     }
@@ -114,18 +114,9 @@ final class DijkstraSolver {
      * Stores a vertex and cost for an adjacency edge or priority-queue candidate.
      * Adjacency edges also retain the original connection for route reconstruction.
      */
-    record Node(int node, long cost, Connection connection) implements Comparator<Node> {
-        private Node() {
-            this(-1, 0, null);
-        }
-
+    record Node(int node, long cost, Connection connection) {
         private Node(int node, long cost) {
             this(node, cost, null);
-        }
-
-        @Override
-        public int compare(Node first, Node second) {
-            return Long.compare(first.cost, second.cost);
         }
     }
 }

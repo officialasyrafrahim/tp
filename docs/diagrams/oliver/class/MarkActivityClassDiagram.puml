@@ -1,4 +1,6 @@
-'@@author Oliver-koh
+/'
+// @@author Oliver-koh
+'/
 @startuml
 !pragma layout smetana
 title Mark an activity as completed
@@ -14,7 +16,7 @@ hide circle
 hide empty members
 
 abstract class Command {
-  +execute(...): CommandResult
+  {abstract} +execute(...): CommandResult
 }
 class Parser {
   +parse(input: String): Command
@@ -29,7 +31,7 @@ class MarkCommand {
 }
 class ActivityList {
   +getByDisplayedIndex(displayedIndex: int): Activity
-  +setDoneAtDisplayedIndex(displayedIndex: int, done: boolean): boolean
+  +setDoneAtDisplayedIndex(displayedIndex: int, isDone: boolean): boolean
 }
 class Activity {
   +getName(): String
@@ -41,9 +43,9 @@ class CommandResult {
   +didChangeActivities(): boolean
 }
 Command <|-- MarkCommand
-Parser ..> MarkCommandParser : delegates command syntax
+Parser *-- MarkCommandParser : delegates command syntax
 MarkCommandParser ..> MarkCommand : creates with index
-MarkCommand ..> ActivityList : requests done = true
+MarkCommand ..> ActivityList : requests isDone = true
 MarkCommand ..> CommandResult : reports whether state changed
 ActivityList --> "0..*" Activity : activities
 note bottom of ActivityList
@@ -57,4 +59,6 @@ note bottom of CommandResult
   Invalid indexes leave the original activity unchanged.
 end note
 @enduml
-'@@author
+/'
+// @@author
+'/

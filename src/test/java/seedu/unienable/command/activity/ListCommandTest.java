@@ -16,7 +16,7 @@ import seedu.unienable.storage.Storage;
 
 //@@author officialasyrafrahim
 /**
- * Checks canonical-order display and read-only behaviour for the list command.
+ * Checks canonical-order display and read-only behavior for the list command.
  */
 class ListCommandTest {
     private final Parser parser = new Parser();
@@ -32,7 +32,7 @@ class ListCommandTest {
     void execute_onEmptyList_showsPlaceholderAndStaysReadOnly() throws Exception {
         var result = parser.parse("list").execute(activities, noWrites);
         assertFalse(result.isExit());
-        assertTrue(result.getMessage().endsWith("[WARNING] No activities yet."));
+        assertTrue(result.getMessage().endsWith("Sorry, the activity list is empty."));
         assertTrue(activities.getActivities().isEmpty());
     }
 

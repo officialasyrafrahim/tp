@@ -40,7 +40,7 @@ public class FacilityFindCommand extends Command {
      *
      * @param activities existing activities, not modified.
      * @param storage activity storage, not used.
-     * @return non-exiting command result containing matching facilities and disclaimer
+     * @return non-exiting command result containing matching facilities and disclaimer.
      */
     @Override
     public CommandResult execute(ActivityList activities, Storage storage) {

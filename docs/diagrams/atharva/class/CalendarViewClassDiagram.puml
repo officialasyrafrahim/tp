@@ -1,4 +1,6 @@
-'@@author Atharva005
+/'
+// @@author Atharva005
+'/
 @startuml
 !pragma layout smetana
 title Calendar dashboard collaborators
@@ -14,7 +16,7 @@ hide circle
 hide empty members
 
 abstract class Command {
-  +execute(...): CommandResult
+  {abstract} +execute(...): CommandResult
 }
 class Parser {
   +parse(input: String): Command
@@ -47,4 +49,6 @@ note bottom of ViewCommand
   Returns a read-only CommandResult.
 end note
 @enduml
-'@@author
+/'
+// @@author
+'/

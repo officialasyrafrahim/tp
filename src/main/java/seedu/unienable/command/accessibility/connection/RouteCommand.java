@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import seedu.unienable.command.accessibility.connection.logic.ConnectionManager;
 import seedu.unienable.command.accessibility.connection.logic.DijkstraShortestPath.Route;
@@ -49,8 +51,8 @@ public final class RouteCommand extends Command {
      *
      * @param activities existing activities, not modified.
      * @param storage activity persistence service, not used.
-     * @return a non-exiting result containing route details or a no-route explanation
-     * @throws UniEnableException if an endpoint is blank or unknown, or both endpoints are the same
+     * @return a non-exiting result containing route details or a no-route explanation.
+     * @throws UniEnableException if an endpoint is blank or unknown, or both endpoints are the same.
      */
     @Override
     public CommandResult execute(ActivityList activities, Storage storage) throws UniEnableException {
@@ -58,7 +60,11 @@ public final class RouteCommand extends Command {
         try {
             route = connectionManager.findRoute(from, to);
         } catch (IllegalArgumentException exception) {
-            throw new UniEnableException("[WARNING] " + exception.getMessage() + "\n" + USAGE);
+            String hubs = connectionManager.getConnections().stream()
+                    .flatMap(connection -> Stream.of(connection.getFrom(), connection.getTo()))
+                    .distinct().sorted().collect(Collectors.joining(", "));
+            throw new UniEnableException("[WARNING] " + exception.getMessage()
+                    + "\nValid hubs: " + (hubs.isEmpty() ? "none loaded" : hubs) + "\n" + USAGE);
         }
 
         if (route.isEmpty()) {
@@ -120,9 +126,9 @@ public final class RouteCommand extends Command {
      */
     private static String formatShelterStatus(ShelterStatus status) {
         return switch (status) {
-            case YES -> "Sheltered";
-            case NO -> "Unsheltered";
-            case UNKNOWN -> "Shelter unconfirmed";
+        case YES -> "Sheltered";
+        case NO -> "Unsheltered";
+        case UNKNOWN -> "Shelter unconfirmed";
         };
     }
 

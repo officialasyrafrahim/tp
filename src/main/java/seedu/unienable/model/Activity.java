@@ -11,6 +11,11 @@ import seedu.unienable.model.enums.DemandLevel;
  * Input formatting and current-time validation belong to the command parser.
  */
 public class Activity {
+    //@@author lukelouyu
+    private static final int MIN_RATING = 1;
+    private static final int MAX_RATING = 5;
+    //@@author
+
     //@@author Atharva005
     private final String name;
     private final LocalDate date;
@@ -102,7 +107,7 @@ public class Activity {
      * @throws IllegalArgumentException if the rating is outside 1 to 5.
      */
     public static void validateRating(Integer rating) {
-        if (rating != null && (rating < 1 || rating > 5)) {
+        if (rating != null && (rating < MIN_RATING || rating > MAX_RATING)) {
             throw new IllegalArgumentException("Rating must be between 1 and 5, or null when unset.");
         }
     }
@@ -234,5 +239,4 @@ public class Activity {
         return isDone;
     }
     //@@author
-
 }

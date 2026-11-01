@@ -1,3 +1,6 @@
+/'
+// @@author lukelouyu
+'/
 @startuml
 title Search facilities by recorded feature status
 skinparam backgroundColor white
@@ -12,10 +15,10 @@ hide footbox
 
 actor "User" as User
 participant "ui:Ui" as UI
-participant "ConsoleHelper" as Console
+participant "ConsoleHelper" as Console <<class>>
 participant ":FacilityFindCommand" as Find
 participant "manager:FacilityManager" as Manager
-participant "FacilityOutputFormatter" as Formatter
+participant "FacilityOutputFormatter" as Formatter <<class>>
 
 Console -> UI : readLine()
 User -> UI : facility find type/LIFT status/NO

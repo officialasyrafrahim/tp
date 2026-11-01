@@ -38,8 +38,8 @@ public class ListDeleteCommandParser {
      * Recognizes list, list demand, and list priority, case-insensitively.
      *
      * @param words command words, beginning with list.
-     * @return the list command to execute
-     * @throws ParseException for unknown variants or unexpected arguments
+     * @return the list command to execute.
+     * @throws ParseException for unknown variants or unexpected arguments.
      */
     public Command parseList(String[] words) throws ParseException {
         if (words.length == 1) {
@@ -70,8 +70,8 @@ public class ListDeleteCommandParser {
      * against the canonical view and reports out-of-range values.
      *
      * @param words command words, beginning with delete.
-     * @return the delete command to execute
-     * @throws ParseException for a missing, extra, or non-integer index
+     * @return the delete command to execute.
+     * @throws ParseException for a missing, extra, or non-integer index.
      */
     public Command parseDelete(String[] words) throws ParseException {
         String usage = "Usage: delete INDEX\nExample: delete 1";

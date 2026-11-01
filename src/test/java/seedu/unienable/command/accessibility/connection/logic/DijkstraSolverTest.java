@@ -1,5 +1,6 @@
 //@@author lukelouyu
 package seedu.unienable.command.accessibility.connection.logic;
+
 //@@author
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -24,7 +25,7 @@ import seedu.unienable.model.enums.TraversalType;
  */
 class DijkstraSolverTest {
     @Test
-    void dijkstra_shorterIndirectPath_recordsDistanceAndPredecessors() {
+    void computeShortestPaths_shorterIndirectPath_recordsDistanceAndPredecessors() {
         var first = connection(1, "A", "B", 4);
         var second = connection(2, "B", "C", 6);
         var direct = connection(3, "A", "C", 20);
@@ -34,7 +35,7 @@ class DijkstraSolverTest {
                 List.of(new Node(0, 20, direct), new Node(1, 6, second)));
         var solver = new DijkstraSolver(graph.size());
 
-        solver.dijkstra(graph, 0);
+        solver.computeShortestPaths(graph, 0);
 
         // A -> B -> C is 10 m, shorter than the direct 20 m connection.
         assertEquals(10L, solver.getDistance(2));
@@ -45,7 +46,7 @@ class DijkstraSolverTest {
     }
 
     @Test
-    void dijkstra_disconnectedVertex_hasNoDistanceOrPredecessor() {
+    void computeShortestPaths_disconnectedVertex_hasNoDistanceOrPredecessor() {
         var link = connection(1, "A", "B", 4);
         List<List<Node>> graph = List.of(
                 List.of(new Node(1, 4, link)),
@@ -53,7 +54,7 @@ class DijkstraSolverTest {
                 List.of());
         var solver = new DijkstraSolver(graph.size());
 
-        solver.dijkstra(graph, 0);
+        solver.computeShortestPaths(graph, 0);
 
         assertEquals(4L, solver.getDistance(1));
         assertEquals(Long.MAX_VALUE, solver.getDistance(2));

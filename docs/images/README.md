@@ -9,20 +9,26 @@ section, and regeneration commands.
 
 | Folder | Class diagrams | Sequence diagrams | Other diagrams |
 | --- | --- | --- | --- |
-| [atharva](#atharva) | Atharva Rege: [Class](#atharva) | [Sequence](#atharva) | - |
+| [atharva](#atharva) | Atharva Rege: [Class](#atharva) | [Sequence](#atharva) | [Object snapshot](atharva/object/ActivityStateSnapshot.png) |
 | [asyraf](#asyraf) | Muhammad Asyraf Bin Abdul Rahim: [Class](#asyraf) | [Sequence](#asyraf) | - |
 | [oliver](#oliver) | Koh Li Wei Oliver: [Class](#oliver) | [Sequence](#oliver) | - |
 | [luke](#luke) | Lou Yu Luke: [Class](#luke) | [Sequence](#luke) | Architecture and [connectivity graph](#luke) |
 
 Lou Yu Luke's activity-creation class diagram and name/parameter validation
 pairs are in the `luke` folder. Atharva Rege's add sequence, calendar, help,
-and schedule validation diagrams are in `atharva`. Class/sequence diagrams use
-`.png`, and the campus connectivity graph uses `.svg`.
+schedule validation, and date parsing diagrams are in `atharva`. Class/sequence
+diagrams use `.png`, and the campus connectivity graph uses `.svg`.
 
 <!-- @@author Atharva005 -->
 
+<a id="atharva"></a>
+
 ## Atharva Rege
 
+- [ActivityDateParserClassDiagram.png](atharva/class/ActivityDateParserClassDiagram.png)
+  shows the date parser shared by add and edit.
+- [ActivityDateParsingSequence.png](atharva/sequence/ActivityDateParsingSequence.png)
+  shows `today`, `tomorrow`, calendar-date, and invalid `d/` values during add.
 - [ActivityScheduleValidatorClassDiagram.png](atharva/class/ActivityScheduleValidatorClassDiagram.png)
   shows duplicate and overlap validation before add/edit changes.
 - [ActivityScheduleValidationSequence.png](atharva/sequence/ActivityScheduleValidationSequence.png)
@@ -37,9 +43,16 @@ and schedule validation diagrams are in `atharva`. Class/sequence diagrams use
   topic selection, validation, and read-only command results.
 - [TopicHelpSequence.png](atharva/sequence/TopicHelpSequence.png) shows construction
   and execution for a known help topic, with notes on the other help scenarios.
+
+### Object diagram
+
+- [ActivityStateSnapshot.png](atharva/object/ActivityStateSnapshot.png) illustrates activity membership, completion and optional ratings.
+
 <!-- @@author -->
 
 <!-- @@author officialasyrafrahim -->
+
+<a id="asyraf"></a>
 
 ## Muhammad Asyraf Bin Abdul Rahim
 
@@ -89,6 +102,8 @@ and schedule validation diagrams are in `atharva`. Class/sequence diagrams use
 
 <!-- @@author lukelouyu -->
 
+<a id="luke"></a>
+
 ## Lou Yu Luke
 
 - [ActivityCreationClassDiagram.png](luke/class/ActivityCreationClassDiagram.png)
@@ -101,7 +116,6 @@ and schedule validation diagrams are in `atharva`. Class/sequence diagrams use
   shows the shared prefix-typo checker used by add and edit.
 - [ActivityParameterValidationSequence.png](luke/sequence/ActivityParameterValidationSequence.png)
   shows a typo warning before an activity command executes.
-
 - [ArchitectureDiagram.png](luke/architecture/ArchitectureDiagram.png) shows
   startup, commands, models, storage, and output responsibilities.
 - [FacilityClassDiagram.png](luke/class/FacilityClassDiagram.png) shows facility

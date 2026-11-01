@@ -1,6 +1,8 @@
 package seedu.unienable.storage;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystemException;
 import java.nio.file.Files;
@@ -41,9 +43,9 @@ public class Storage {
 
     private final Path activityFile;
     private List<String> warnings = List.of();
-    private boolean loadedCorruptData;
+    private boolean hasLoadedCorruptData;
     /** Tracks in-memory activity changes until a complete save succeeds. */
-    private boolean unsavedChanges;
+    private boolean hasUnsavedChanges;
 
     /**
      * Creates storage at the default runtime location.
@@ -69,7 +71,7 @@ public class Storage {
      */
     public ActivityList load() throws UniEnableException {
         warnings = new ArrayList<>();
-        loadedCorruptData = false;
+        hasLoadedCorruptData = false;
         if (!Files.exists(activityFile)) {
             return new ActivityList();
         }
@@ -77,19 +79,25 @@ public class Storage {
         List<Activity> activities = new ArrayList<>();
         List<String> lines;
         try {
-            lines = Files.readAllLines(activityFile, StandardCharsets.UTF_8);
+            // Split the file into rows first, so one row with invalid UTF-8
+            // does not stop other rows from loading.
+            lines = new String(Files.readAllBytes(activityFile), StandardCharsets.ISO_8859_1).lines().toList();
         } catch (IOException exception) {
             // A decoding or I/O failure must not bypass recovery protection on a later save.
-            loadedCorruptData = true;
+            hasLoadedCorruptData = true;
             throw new UniEnableException("Unable to load activities: " + exception.getMessage());
         }
 
         for (int i = 0; i < lines.size(); i++) {
-            String line = lines.get(i);
             try {
+                String line = StandardCharsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(
+                        lines.get(i).getBytes(StandardCharsets.ISO_8859_1))).toString();
                 activities.add(parseLine(line));
+            } catch (CharacterCodingException exception) {
+                hasLoadedCorruptData = true;
+                warnings.add("Line " + (i + 1) + ": invalid UTF-8 encoding; row skipped. Save the file as UTF-8.");
             } catch (IllegalArgumentException exception) {
-                loadedCorruptData = true;
+                hasLoadedCorruptData = true;
                 warnings.add("Line " + (i + 1) + ": " + exception.getMessage());
             }
         }
@@ -105,9 +113,11 @@ public class Storage {
         return List.copyOf(warnings);
     }
 
-    /** Records that the console has changed activities before attempting to save them. */
+    /**
+     * Records that the console has changed activities before attempting to save them.
+     */
     public void markUnsavedChanges() {
-        unsavedChanges = true;
+        hasUnsavedChanges = true;
     }
 
     /**
@@ -116,7 +126,7 @@ public class Storage {
      * @return true until the current activity changes save successfully.
      */
     public boolean hasUnsavedChanges() {
-        return unsavedChanges;
+        return hasUnsavedChanges;
     }
 
     /**
@@ -132,7 +142,7 @@ public class Storage {
             if (parent != null) {
                 Files.createDirectories(parent);
             }
-            if (loadedCorruptData && Files.exists(activityFile)) {
+            if (hasLoadedCorruptData && Files.exists(activityFile)) {
                 backupCorruptFile();
             }
 
@@ -148,8 +158,8 @@ public class Storage {
                     StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING,
                     StandardOpenOption.WRITE);
             moveIntoPlace(temporaryFile);
-            loadedCorruptData = false;
-            unsavedChanges = false;
+            hasLoadedCorruptData = false;
+            hasUnsavedChanges = false;
         } catch (IOException exception) {
             throw new UniEnableException("Unable to save activities: " + exception.getMessage());
         }
@@ -183,8 +193,8 @@ public class Storage {
                 throw new IllegalArgumentException("end time must be later than start time on the same day.");
             }
             DemandLevel demand = DemandLevel.valueOf(fields[4].toUpperCase(Locale.ROOT));
-            boolean done = parseDone(fields[5]);
-            return new Activity(fields[0], date, startTime, endTime, demand, done,
+            boolean isDone = parseDone(fields[5]);
+            return new Activity(fields[0], date, startTime, endTime, demand, isDone,
                     importance, urgency, commitment);
         } catch (DateTimeParseException | IllegalArgumentException exception) {
             throw new IllegalArgumentException("invalid date, time, demand, or completion value.");

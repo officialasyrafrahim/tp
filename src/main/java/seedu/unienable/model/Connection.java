@@ -34,7 +34,7 @@ public final class Connection {
      * @param id connection ID.
      * @param from one endpoint facility name, such as AS1.
      * @param to the other endpoint facility name, such as CLB.
-     * @param distanceInMetres recorded distance in metres.
+     * @param distanceInMetres recorded distance in meters.
      * @param accessibility recorded accessibility; UNKNOWN means unconfirmed.
      * @param type physical traversal category.
      * @param shelter recorded shelter; UNKNOWN means unconfirmed.
@@ -83,9 +83,9 @@ public final class Connection {
     }
 
     /**
-     * Returns the recorded distance in metres.
+     * Returns the recorded distance in meters.
      *
-     * @return the recorded distance in metres.
+     * @return the recorded distance in meters.
      */
     public int getDistanceInMetres() {
         return distanceInMetres;

@@ -1,3 +1,6 @@
+/'
+// @@author lukelouyu
+'/
 @startuml
 !pragma layout smetana
 title Facility reference data and queries
@@ -42,7 +45,7 @@ class FacilityFeature {
 FacilityStorage ..> LoadResult : creates
 FacilityStorage ..> Facility : constructs
 FacilityManager --> "0..*" Facility : facilities
-Facility --> "0..*" FacilityFeature : features
+Facility *-- "0..*" FacilityFeature : features
 
 note bottom of FacilityManager
   Queries a loaded snapshot;

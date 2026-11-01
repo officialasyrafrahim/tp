@@ -49,7 +49,7 @@ class StorageTest {
         };
         List<Activity> originals = new ArrayList<>();
         for (int i = 0; i < ratings.length; i++) {
-            originals.add(new Activity("Review and/or study " + i, LocalDate.of(2000, 1, 1),
+            originals.add(new Activity("Review and/or study " + i, LocalDate.of(2026, 1, 1),
                     LocalTime.of(9, 0), LocalTime.of(10, 0), DemandLevel.HIGH, i % 2 == 0,
                     ratings[i][0], ratings[i][1], ratings[i][2]));
         }
@@ -59,9 +59,9 @@ class StorageTest {
         List<Activity> loaded = restarted.load().getActivities();
 
         List<String> rows = Files.readAllLines(file, StandardCharsets.UTF_8);
-        assertEquals("Review and/or study 0|2000-01-01|09:00|10:00|HIGH|true|-|-|-", rows.getFirst());
-        assertEquals("Review and/or study 1|2000-01-01|09:00|10:00|HIGH|false|5|-|-", rows.get(1));
-        assertEquals("Review and/or study 7|2000-01-01|09:00|10:00|HIGH|false|5|4|3", rows.getLast());
+        assertEquals("Review and/or study 0|2026-01-01|09:00|10:00|HIGH|true|-|-|-", rows.getFirst());
+        assertEquals("Review and/or study 1|2026-01-01|09:00|10:00|HIGH|false|5|-|-", rows.get(1));
+        assertEquals("Review and/or study 7|2026-01-01|09:00|10:00|HIGH|false|5|4|3", rows.getLast());
         assertEquals(originals.size(), loaded.size());
         for (int i = 0; i < originals.size(); i++) {
             Activity expected = originals.get(i);
@@ -83,9 +83,9 @@ class StorageTest {
     @Test
     void load_legacyAndRatedRows_migratesOnlyOnSave() throws Exception {
         Path file = tempDir.resolve("activities.txt");
-        String legacyDone = "Legacy done|2000-01-01|09:00|10:00|HIGH|true";
-        String legacyPending = "Legacy pending|2001-01-01|10:00|11:00|LOW|false";
-        String rated = "Rated|2002-01-01|11:00|12:00|MEDIUM|false|2|-|5";
+        String legacyDone = "Legacy done|2026-01-01|09:00|10:00|HIGH|true";
+        String legacyPending = "Legacy pending|2027-01-01|10:00|11:00|LOW|false";
+        String rated = "Rated|2028-01-01|11:00|12:00|MEDIUM|false|2|-|5";
         String original = String.join("\n", legacyDone, legacyPending, rated);
         Files.writeString(file, original, StandardCharsets.UTF_8);
         Storage storage = new Storage(file);
@@ -114,13 +114,13 @@ class StorageTest {
     @Test
     void load_skipsMalformedRowsAndReportsLineNumbers() throws Exception {
         Path file = tempDir.resolve("activities.txt");
-        String valid = "Valid|2000-01-01|09:00|10:00|HIGH|false";
+        String valid = "Valid|2026-01-01|09:00|10:00|HIGH|false";
         List<String> invalid = new ArrayList<>(List.of(
                 "broken row",
-                "BadDate|2000-02-30|09:00|10:00|LOW|false",
-                "BadTime|2000-01-01|25:00|10:00|LOW|false",
-                "BadDemand|2000-01-01|09:00|10:00|URGENT|false",
-                "BadDone|2000-01-01|09:00|10:00|LOW|maybe",
+                "BadDate|2026-02-30|09:00|10:00|LOW|false",
+                "BadTime|2026-01-01|25:00|10:00|LOW|false",
+                "BadDemand|2026-01-01|09:00|10:00|URGENT|false",
+                "BadDone|2026-01-01|09:00|10:00|LOW|maybe",
                 valid + "|1", valid + "|1|2", valid + "|1|2|3|4"));
         for (String value : new String[] {"", "0", "6", "-1", "1.5", "text", "2147483648"}) {
             for (int field = 0; field < 3; field++) {
@@ -147,12 +147,12 @@ class StorageTest {
 
     @Test
     void load_invalidTimeRanges_warnsAndPreservesOriginalBeforeRecoverySave() throws Exception {
-        String valid = "Historical|2000-01-01|09:00|10:00|LOW|false";
+        String valid = "Historical|2026-01-01|09:00|10:00|LOW|false";
         String[] ranges = {"09:00|09:00", "10:00|09:00"};
         for (int range = 0; range < ranges.length; range++) {
             for (boolean rated : new boolean[] {false, true}) {
                 Path file = tempDir.resolve("invalid-range-" + range + "-" + rated + ".txt");
-                String invalid = "Invalid|2000-01-02|" + ranges[range] + "|HIGH|false"
+                String invalid = "Invalid|2026-01-02|" + ranges[range] + "|HIGH|false"
                         + (rated ? "|5|4|3" : "");
                 String original = valid + "\n" + invalid + "\n";
                 Files.writeString(file, original, StandardCharsets.UTF_8);
@@ -193,12 +193,13 @@ class StorageTest {
     }
 
     @Test
-    void save_afterFatalUtf8LoadFailure_preservesOriginalBytesInBackup() throws Exception {
+    void save_afterInvalidUtf8Row_preservesOriginalBytesInBackup() throws Exception {
         Path file = tempDir.resolve("activities.txt");
         byte[] original = {0x4F, 0x6C, 0x64, (byte) 0xFF, 0x0A};
         Files.write(file, original);
         Storage storage = new Storage(file);
-        assertThrows(UniEnableException.class, storage::load);
+        assertTrue(storage.load().getActivities().isEmpty());
+        assertTrue(storage.getWarnings().getFirst().contains("invalid UTF-8 encoding"));
         Activity added = new Activity("New meeting", LocalDate.of(2026, 10, 20), LocalTime.of(9, 0),
                 LocalTime.of(10, 0), DemandLevel.MEDIUM, false);
 
@@ -209,9 +210,27 @@ class StorageTest {
     }
 
     @Test
+    void load_invalidUtf8BetweenValidRows_recoversReadableRecordsWithoutReplacingBytes() throws Exception {
+        Path file = tempDir.resolve("activities.txt");
+        byte[] original = ("Before|2027-12-01|09:00|10:00|LOW|false\r\n"
+                + "Bad\u00ff|2027-12-01|10:00|11:00|LOW|false\r\n"
+                + "After|2027-12-01|11:00|12:00|LOW|false\r\n").getBytes(StandardCharsets.ISO_8859_1);
+        Files.write(file, original);
+        Storage storage = new Storage(file);
+        ActivityList loaded = storage.load();
+        assertEquals(List.of("Before", "After"), loaded.getActivities().stream().map(Activity::getName).toList());
+        assertEquals(List.of("Line 2: invalid UTF-8 encoding; row skipped. Save the file as UTF-8."),
+                storage.getWarnings());
+        assertArrayEquals(original, Files.readAllBytes(file));
+        storage.save(loaded);
+        assertArrayEquals(original, Files.readAllBytes(tempDir.resolve("activities.txt.corrupt.bak")));
+        assertEquals(2, new Storage(file).load().getActivities().size());
+    }
+
+    @Test
     void save_whenRecoveryBackupCannotBeCreated_preservesOriginalFile() throws Exception {
         Path file = tempDir.resolve("activities.txt");
-        byte[] original = "BadRating|2000-01-01|09:00|10:00|HIGH|false|6|-|-\n"
+        byte[] original = "BadRating|2026-01-01|09:00|10:00|HIGH|false|6|-|-\n"
                 .getBytes(StandardCharsets.UTF_8);
         Files.write(file, original);
         Storage storage = new Storage(file);
@@ -229,7 +248,7 @@ class StorageTest {
     @Test
     void save_whenTemporaryWriteFails_preservesOriginalFile() throws Exception {
         Path file = tempDir.resolve("activities.txt");
-        String original = "Valid|2000-01-01|09:00|10:00|HIGH|true\n";
+        String original = "Valid|2026-01-01|09:00|10:00|HIGH|true\n";
         Files.writeString(file, original, StandardCharsets.UTF_8);
         Storage storage = new Storage(file);
         ActivityList loaded = storage.load();

@@ -2,6 +2,7 @@ package seedu.unienable.parser;
 
 import seedu.unienable.command.accessibility.connection.RouteCommand;
 import seedu.unienable.command.accessibility.connection.logic.ConnectionManager;
+import seedu.unienable.command.accessibility.connection.logic.FacilityManager;
 import seedu.unienable.exception.ParseException;
 
 //@@author lukelouyu
@@ -33,6 +34,8 @@ public class RouteParser {
      * Loaded connection reference data used by route commands; null when unavailable.
      */
     private final ConnectionManager connectionManager;
+    /** Resolves stable facility IDs before the graph receives hub names. */
+    private final FacilityManager facilityManager;
 
     /**
      * Creates a parser with the available connection reference data.
@@ -40,15 +43,23 @@ public class RouteParser {
      * @param connectionManager manager used by route commands, or null when unavailable.
      */
     public RouteParser(ConnectionManager connectionManager) {
+        this(connectionManager, null);
+    }
+
+    /**
+     * Creates a route parser with optional ID lookup; name-only routing still works without facilities.
+     */
+    public RouteParser(ConnectionManager connectionManager, FacilityManager facilityManager) {
         this.connectionManager = connectionManager;
+        this.facilityManager = facilityManager;
     }
 
     /**
      * Parses route prefixes and asks for any missing source or destination.
      *
      * @param words command words beginning with route, with optional from/ and to/ arguments.
-     * @return the route command with both endpoints supplied
-     * @throws ParseException if arguments are missing, malformed or reference data is unavailable
+     * @return the route command with both endpoints supplied.
+     * @throws ParseException if arguments are missing, malformed or reference data is unavailable.
      */
     public RouteCommand parseRoute(String[] words) throws ParseException {
         if (words.length > 3) {
@@ -86,6 +97,10 @@ public class RouteParser {
         }
         if (connectionManager == null) {
             throw new ParseException(WARNING_MESSAGE + " Connection reference data is unavailable.");
+        }
+        if (facilityManager != null) {
+            from = facilityManager.findFacility(from).map(facility -> facility.getName()).orElse(from);
+            to = facilityManager.findFacility(to).map(facility -> facility.getName()).orElse(to);
         }
         return new RouteCommand(connectionManager, from, to);
     }

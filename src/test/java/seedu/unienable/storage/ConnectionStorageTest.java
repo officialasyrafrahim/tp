@@ -9,6 +9,7 @@ import java.io.FilterReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DynamicTest;
@@ -52,7 +53,7 @@ class ConnectionStorageTest {
 
     @Test
     void bundledGraph_preservesAllEndpointsDistancesAndRestrictions() throws Exception {
-        var source = new java.util.ArrayList<>(List.of(new Facility("F01", "AS1", null, List.of()),
+        var source = new ArrayList<>(List.of(new Facility("F01", "AS1", null, List.of()),
                 new Facility("F02", "AS2", null, List.of())));
         var snapshot = new ConnectionStorage(source);
         source.clear();
@@ -80,6 +81,7 @@ class ConnectionStorageTest {
             public int read(char[] buffer, int offset, int length) throws IOException {
                 throw cause;
             }
+
             @Override
             public void close() {
                 throw new AssertionError("Caller owns this reader");
@@ -292,5 +294,6 @@ class ConnectionStorageTest {
                     "# Header\n\nCONNECTION|9|AS1|AS9|10|YES|PATH|YES\nCONNECTION|9|AS1|AS2|10|YES|"
                         + "PATH|YES\nBROKEN", "1", "2", "9|AS1|AS2|10|YES|PATH|YES|null|null",
                     "Line 3: Unknown facility endpoint: AS1 / AS9\nLine 5: CONNECTION requires 8 " + "to 10 fields."});
-    }}
+    }
+}
 //@@author

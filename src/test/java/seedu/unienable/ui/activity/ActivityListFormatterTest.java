@@ -26,10 +26,11 @@ class ActivityListFormatterTest {
             LocalTime.parse("14:00"), LocalTime.parse("16:00"), DemandLevel.LOW, false);
 
     @Test
-    void formatList_empty_showsHeadingAndPlaceholder() {
+    void formatList_empty_showsOnlySorryMessage() {
         String message = ActivityListFormatter.formatList(List.of());
-        assertTrue(message.startsWith("Activities"), "heading missing for empty list");
-        assertTrue(message.endsWith("[WARNING] No activities yet."), "empty-list warning missing");
+        assertEquals("Sorry, the activity list is empty.", message);
+        assertTrue(message.endsWith("Sorry, the activity list is empty."),
+                "empty-list message missing");
     }
 
     @Test
@@ -48,7 +49,7 @@ class ActivityListFormatterTest {
                 + "Indexes refer to the chronological 'list' order.\n";
         assertEquals(headingAndNotice + "1. Gym session (2026-10-12, 07:00-09:00) [HIGH] [ ]",
                 ActivityListFormatter.formatDemandList(List.of(mondayGym), List.of(mondayGym)));
-        assertEquals(headingAndNotice + "[WARNING] No activities yet.",
+        assertEquals("Sorry, the activity list is empty.",
                 ActivityListFormatter.formatDemandList(List.of(), List.of()));
     }
 
@@ -94,7 +95,7 @@ class ActivityListFormatterTest {
                 + "2. [OVERDUE WEEK] Gym session (2026-10-12, 07:00-09:00) [HIGH] [ ]\n"
                 + "3. [OVERDUE TODAY] Today (2026-10-13, 09:00-10:00) [LOW] [ ]",
                 message);
-        assertEquals("Overdue activities (ended before now):\n[WARNING] No overdue activities.",
+        assertEquals("Sorry, no incomplete activities have ended.",
                 ActivityListFormatter.formatOverdueList(List.of(), canonicalView,
                         LocalDateTime.parse("2026-10-13T12:00:00")));
     }
@@ -103,7 +104,7 @@ class ActivityListFormatterTest {
     void formatNext_showsOneIndexedActivityOrEmptyMessage() {
         assertEquals("Next activity (earliest upcoming):\n2. Lab (2026-10-13, 14:00-16:00) [LOW] [ ]",
                 ActivityListFormatter.formatNext(Optional.of(tuesdayLab), List.of(mondayGym, tuesdayLab)));
-        assertEquals("Next activity (earliest upcoming):\n[WARNING] No upcoming incomplete activities.",
+        assertEquals("Sorry, no upcoming incomplete activities exist.",
                 ActivityListFormatter.formatNext(Optional.empty(), List.of(mondayGym, tuesdayLab)));
     }
 }

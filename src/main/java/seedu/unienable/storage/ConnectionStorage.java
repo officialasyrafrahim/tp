@@ -42,8 +42,8 @@ public class ConnectionStorage {
     /**
      * Loads connections.txt from the UTF-8 classpath, including inside a packaged JAR.
      *
-     * @return valid connections in source order with warnings for skipped lines
-     * @throws UniEnableException if the bundled resource is missing or unreadable
+     * @return valid connections in source order with warnings for skipped lines.
+     * @throws UniEnableException if the bundled resource is missing or unreadable.
      */
     public LoadResult<Connection> load() throws UniEnableException {
         return loadResource("/connections.txt");
@@ -54,8 +54,8 @@ public class ConnectionStorage {
      * Tags, enum values, and endpoint names are matched exactly; endpoint text is not rewritten.
      *
      * @param source reader containing connection records.
-     * @return valid records and warnings carrying physical line numbers
-     * @throws UniEnableException if reading fails; partial data is not returned as a successful load
+     * @return valid records and warnings carrying physical line numbers.
+     * @throws UniEnableException if reading fails; partial data is not returned as a successful load.
      */
     public LoadResult<Connection> load(Reader source) throws UniEnableException {
         List<Connection> records = new ArrayList<>();
@@ -81,7 +81,7 @@ public class ConnectionStorage {
                 }
             }
         } catch (IOException exception) {
-            throw readFailure(exception);
+            throw createReadFailure(exception);
         }
         return new LoadResult<>(records, warnings);
     }
@@ -105,7 +105,7 @@ public class ConnectionStorage {
         try (Reader reader = source) {
             return load(reader);
         } catch (IOException exception) {
-            throw readFailure(exception);
+            throw createReadFailure(exception);
         }
     }
 
@@ -135,8 +135,8 @@ public class ConnectionStorage {
         AccessibilityStatus accessibility = parseEnum(AccessibilityStatus.class, fields[5], "accessibility status");
         TraversalType type = parseEnum(TraversalType.class, fields[6], "traversal type");
         ShelterStatus shelter = parseEnum(ShelterStatus.class, fields[7], "shelter status");
-        String barrier = fields.length >= 9 ? optionalText(fields[8]) : null;
-        String notes = fields.length == 10 ? optionalText(fields[9]) : null;
+        String barrier = fields.length >= 9 ? toOptionalText(fields[8]) : null;
+        String notes = fields.length == 10 ? toOptionalText(fields[9]) : null;
         return new Connection(id, fields[2], fields[3], distance, accessibility, type, shelter, barrier, notes);
     }
 
@@ -159,14 +159,14 @@ public class ConnectionStorage {
         }
     }
 
-    private String optionalText(String value) {
+    private String toOptionalText(String value) {
         return value.isEmpty() ? null : value;
     }
 
     /**
      * Reports a concise I/O failure and retains its cause for diagnostics.
      */
-    private UniEnableException readFailure(IOException cause) {
+    private UniEnableException createReadFailure(IOException cause) {
         UniEnableException exception = new UniEnableException(
                 "Unable to read connection dataset: " + cause.getMessage());
         exception.initCause(cause);

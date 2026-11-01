@@ -30,7 +30,7 @@ public final class Facility {
     /**
      * Returns the id value recorded for this object.
      *
-     * @return stable facility ID, preserved as supplied
+     * @return stable facility ID, preserved as supplied.
      */
     public String getId() {
         return id;
@@ -39,7 +39,7 @@ public final class Facility {
     /**
      * Returns the name value recorded for this object.
      *
-     * @return facility name, preserved as supplied
+     * @return facility name, preserved as supplied.
      */
     public String getName() {
         return name;
@@ -48,7 +48,7 @@ public final class Facility {
     /**
      * Returns the description value recorded for this object.
      *
-     * @return optional description, or null
+     * @return optional description, or null.
      */
     public String getDescription() {
         return description;
@@ -58,7 +58,7 @@ public final class Facility {
      * Returns the features value recorded for this object.
      * The returned list is immutable.
      *
-     * @return non-null feature list with no null entries; copied defensively
+     * @return non-null feature list with no null entries; copied defensively.
      */
     public List<FacilityFeature> getFeatures() {
         return features;

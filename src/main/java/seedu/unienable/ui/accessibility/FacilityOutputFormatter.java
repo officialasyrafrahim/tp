@@ -24,7 +24,7 @@ public final class FacilityOutputFormatter {
      * Formats the complete list of facilities with one disclaimer at the end.
      *
      * @param facilities facilities in the order they should be displayed.
-     * @return list heading, facility details, and accessibility disclaimer
+     * @return list heading, facility details, and accessibility disclaimer.
      */
     public static String formatList(List<Facility> facilities) {
         StringBuilder output = new StringBuilder("Known facilities in the local reference:");
@@ -34,17 +34,17 @@ public final class FacilityOutputFormatter {
         for (Facility facility : facilities) {
             output.append("\n\n").append(FacilityDetailsFormatter.format(facility));
         }
-        return withDisclaimer(output.toString());
+        return appendDisclaimer(output.toString());
     }
 
     /**
      * Formats one facility's recorded details and the accessibility disclaimer.
      *
      * @param facility facility to display.
-     * @return facility details and accessibility disclaimer
+     * @return facility details and accessibility disclaimer.
      */
     public static String formatFacility(Facility facility) {
-        return withDisclaimer(FacilityDetailsFormatter.format(facility));
+        return appendDisclaimer(FacilityDetailsFormatter.format(facility));
     }
 
     /**
@@ -54,7 +54,7 @@ public final class FacilityOutputFormatter {
      * @param matches matching facilities in the order they should be displayed.
      * @param type feature used in the search.
      * @param status recorded status used in the search.
-     * @return search heading, matching IDs and names, and accessibility disclaimer
+     * @return search heading, matching IDs and names, and accessibility disclaimer.
      */
     public static String formatFindResults(List<Facility> matches,
             FacilityFeature.Type type, AccessibilityStatus status) {
@@ -73,7 +73,7 @@ public final class FacilityOutputFormatter {
         if (status == AccessibilityStatus.UNKNOWN) {
             output.append("\n\nUNKNOWN means the local dataset does not confirm the feature.");
         }
-        return withDisclaimer(output.toString());
+        return appendDisclaimer(output.toString());
     }
 
     /**
@@ -81,7 +81,7 @@ public final class FacilityOutputFormatter {
      *
      * @param identifier facility identifier entered by the user.
      * @param facilities supported facilities in dataset order.
-     * @return warning message with supported names and a lookup example
+     * @return warning message with supported names and a lookup example.
      */
     public static String formatUnknownFacility(String identifier, List<Facility> facilities) {
         StringBuilder output = new StringBuilder("[WARNING] Unknown facility '");
@@ -104,9 +104,9 @@ public final class FacilityOutputFormatter {
      * Adds the shared accessibility disclaimer after the formatted message.
      *
      * @param message content to display before the disclaimer.
-     * @return complete message with the disclaimer
+     * @return complete message with the disclaimer.
      */
-    private static String withDisclaimer(String message) {
+    private static String appendDisclaimer(String message) {
         return message + "\n\n" + AccessibilityDisclaimer.TEXT;
     }
 }

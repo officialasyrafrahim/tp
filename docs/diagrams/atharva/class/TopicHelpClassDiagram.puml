@@ -1,4 +1,6 @@
-'@@author Atharva005
+/'
+// @@author Atharva005
+'/
 @startuml
 !pragma layout smetana
 title Categorized menu and topic help design
@@ -14,7 +16,7 @@ hide circle
 hide empty members
 
 abstract class Command {
-  +execute(activities: ActivityList, storage: Storage): CommandResult
+  {abstract} +execute(activities: ActivityList, storage: Storage): CommandResult
 }
 class Parser {
   +parse(input: String): Command
@@ -53,4 +55,6 @@ note bottom of CommandResult
   ActivityList and Storage are not read or modified.
 end note
 @enduml
-'@@author
+/'
+// @@author
+'/

@@ -63,13 +63,13 @@ class NextCommandTest {
 
         String message = parser.parse("next").execute(activities, noWrites).getMessage();
 
-        assertTrue(message.endsWith("[WARNING] No upcoming incomplete activities."), message);
+        assertTrue(message.endsWith("Sorry, no upcoming incomplete activities exist."), message);
     }
 
     @Test
     void execute_onEmptyList_showsEmptyMessage() throws Exception {
         String message = parser.parse("next").execute(activities, noWrites).getMessage();
-        assertTrue(message.endsWith("[WARNING] No upcoming incomplete activities."), message);
+        assertTrue(message.endsWith("Sorry, no upcoming incomplete activities exist."), message);
     }
 
     @Test
@@ -77,9 +77,9 @@ class NextCommandTest {
         assertThrows(ParseException.class, () -> parser.parse("next extra"));
     }
 
-    private void add(String name, String date, String start, boolean done) {
+    private void add(String name, String date, String start, boolean isDone) {
         activities.addActivity(new Activity(name, LocalDate.parse(date), LocalTime.parse(start),
-                LocalTime.parse(start).plusHours(1), DemandLevel.MEDIUM, done));
+                LocalTime.parse(start).plusHours(1), DemandLevel.MEDIUM, isDone));
     }
 }
 //@@author

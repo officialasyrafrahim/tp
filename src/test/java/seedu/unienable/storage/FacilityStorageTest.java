@@ -127,6 +127,7 @@ class FacilityStorageTest {
             public int read(char[] buffer, int offset, int length) throws IOException {
                 throw cause;
             }
+
             @Override
             public void close() {
                 throw new AssertionError("Caller owns this reader");
@@ -255,5 +256,6 @@ class FacilityStorageTest {
                     "F01|AS1|null|OTHER|NO|Note", ""},
                 new String[]{"F_FEATURE_OTHER_UNKNOWN", "F", "FACILITY|F01|AS1|\nFEATURE|F01|OTHER|UNKNOWN|Note",
                     "1", "0", "F01|AS1|null|OTHER|UNKNOWN|Note", ""});
-    }}
+    }
+}
 //@@author

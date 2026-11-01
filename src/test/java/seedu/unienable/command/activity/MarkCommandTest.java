@@ -54,9 +54,9 @@ class MarkCommandTest {
         assertTrue(activities.getActivities().isEmpty());
     }
 
-    private static Activity activity(String name, int day, int hour, boolean done) {
+    private static Activity activity(String name, int day, int hour, boolean isDone) {
         return new Activity(name, LocalDate.of(2026, 10, day), LocalTime.of(hour, 0),
-                LocalTime.of(hour + 1, 0), DemandLevel.MEDIUM, done);
+                LocalTime.of(hour + 1, 0), DemandLevel.MEDIUM, isDone);
     }
 }
 //@@author

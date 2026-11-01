@@ -13,6 +13,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.Test;
 
@@ -47,6 +48,23 @@ class ViewCommandTest {
     };
 
     @Test
+    void scheduleRows_alignRatingsForDifferentNameAndIndexLengths() throws Exception {
+        ActivityList activities = new ActivityList();
+        for (int i = 0; i < 12; i++) {
+            activities.addActivity(new Activity(i == 0 ? "Short" : "A longer activity " + i,
+                    TODAY, START, END, DemandLevel.LOW, false));
+        }
+        String message = parser.parse("view today").execute(activities, noWrites).getMessage();
+        List<String> rows = message.lines().filter(line -> line.contains("    IMP ")).toList();
+        assertEquals(12, rows.size());
+        int ratingColumn = rows.getFirst().indexOf("IMP");
+        for (String row : rows) {
+            assertEquals(ratingColumn, row.indexOf("IMP"), row);
+        }
+        assertEquals("Short", activities.getActivities().getFirst().getName());
+    }
+
+    @Test
     void execute_unicodeNames_alignAndTruncateWithoutSplittingCharacters() throws Exception {
         ActivityList activities = new ActivityList(List.of(
                 new Activity("复习".repeat(20), TODAY, START, END, DemandLevel.LOW, false),
@@ -63,12 +81,12 @@ class ViewCommandTest {
     }
 
     @Test
-    void execute_emptyList_warnsWithoutShowingEmptyCharts() throws Exception {
+    void execute_emptyList_reportsNormalResultWithoutShowingEmptyCharts() throws Exception {
         assertEmptyViews(new ActivityList());
     }
 
     @Test
-    void execute_activitiesOutsideRange_warnsWithoutChangingActivities() throws Exception {
+    void execute_activitiesOutsideRange_reportsNormalResultWithoutChangingActivities() throws Exception {
         ActivityList activities = new ActivityList();
         activities.addActivity(new Activity("Previous week", TODAY.minusDays(7), START, END,
                 DemandLevel.LOW, false));
@@ -82,7 +100,8 @@ class ViewCommandTest {
     void parse_removedDemandCommand_reportsUnrecognizedCommand() {
         for (String input : List.of("demand", "demand today", "DEMAND TODAY", "demand today extra")) {
             ParseException exception = assertThrows(ParseException.class, () -> parser.parse(input), input);
-            assertEquals("[WARNING] Unrecognized command. Type bye to exit.", exception.getMessage(), input);
+            assertEquals("[WARNING] Unrecognized command. Type help to see available commands.",
+                    exception.getMessage(), input);
         }
     }
 
@@ -324,7 +343,8 @@ class ViewCommandTest {
             assertFalse(chart.contains("C".repeat(27)));
             assertFalse(chart.contains("D".repeat(200)));
             for (String name : names) {
-                assertTrue(message.contains("] " + name + "    IMP"), "Full schedule name missing");
+                assertTrue(message.matches("(?s).*\\] " + Pattern.quote(name)
+                        + "\\s+IMP.*"), "Full schedule name missing");
             }
             assertFalse(result.didChangeActivities());
             assertEquals(original, activities.getActivities());
@@ -336,12 +356,9 @@ class ViewCommandTest {
      */
     private void assertEmptyViews(ActivityList activities) throws Exception {
         String[][] cases = {
-            {"view today", "TODAY - Sunday, 25 October 2026\n\n"
-                    + "[WARNING] No activities scheduled for this day."},
-            {"view tomorrow", "TOMORROW - Monday, 26 October 2026\n\n"
-                    + "[WARNING] No activities scheduled for this day."},
-            {"view week", "WEEK - Sunday, 25 October 2026 to Saturday, 31 October 2026\n\n"
-                    + "[WARNING] No activities scheduled for the next seven days."}
+            {"view today", "Sorry, no activities fall within the selected period."},
+            {"view tomorrow", "Sorry, no activities fall within the selected period."},
+            {"view week", "Sorry, no activities fall within the selected period."}
         };
         List<Activity> original = activities.getActivities();
         for (String[] scenario : cases) {

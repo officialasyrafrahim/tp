@@ -25,13 +25,10 @@ import seedu.unienable.model.enums.DemandLevel;
 public class EditCommandParser {
     private static final Pattern INDEX_PATTERN = Pattern.compile("\\d+");
     private static final Pattern PREFIX = Pattern.compile("(?i)(?<!\\S)(overlap|dem|imp|urg|com|n|d|s|e)/");
-    private static final Pattern DATE_PATTERN = Pattern.compile("\\d{4}-\\d{2}-\\d{2}");
     private static final Pattern TIME_PATTERN = Pattern.compile("\\d{2}:\\d{2}");
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("uuuu-MM-dd")
-            .withResolverStyle(ResolverStyle.STRICT);
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm")
             .withResolverStyle(ResolverStyle.STRICT);
-    private static final String USAGE = "Usage: edit INDEX [n/NAME] [d/YYYY-MM-DD] [s/HH:mm] "
+    private static final String USAGE = "Usage: edit INDEX [n/NAME] [d/YYYY-MM-DD|today|tomorrow] [s/HH:mm] "
             + "[e/HH:mm] [dem/LOW|MEDIUM|HIGH] [imp/IMP] [urg/URG] [com/COM] [overlap/ALLOW]";
 
     private final Clock clock;
@@ -54,35 +51,35 @@ public class EditCommandParser {
      * Parses an edit command after the leading {@code edit} word.
      *
      * @param arguments index followed by one or more editable fields.
-     * @return validated edit command
-     * @throws ParseException for malformed or incomplete input
+     * @return validated edit command.
+     * @throws ParseException for malformed or incomplete input.
      */
     public EditCommand parse(String arguments) throws ParseException {
         if (arguments.contains("|") || arguments.indexOf('\n') >= 0 || arguments.indexOf('\r') >= 0) {
-            throw invalid("The activity name must not contain | or line breaks.");
+            throw createUsageError("The | character and line breaks are not allowed in command parameters.");
         }
         ActivityParameterValidator.validate(arguments);
         String trimmed = arguments.trim();
         if (trimmed.isEmpty()) {
-            throw invalid("edit needs an activity index.");
+            throw createUsageError("edit needs an activity index.");
         }
         int separator = firstWhitespaceIndex(trimmed);
         String indexToken = separator < 0 ? trimmed : trimmed.substring(0, separator);
         int index = parseIndex(indexToken);
         if (separator < 0) {
-            throw invalid("At least one field must be supplied.");
+            throw createUsageError("At least one field must be supplied.");
         }
 
         Map<String, String> fields = readFields(trimmed.substring(separator).trim());
         if (fields.size() == 1 && fields.containsKey("overlap")) {
-            throw invalid("At least one editable field must be supplied with overlap/ALLOW.");
+            throw createUsageError("At least one editable field must be supplied with overlap/ALLOW.");
         }
         String name = fields.get("n");
         if (name != null && name.isBlank()) {
-            throw invalid("Empty n/ parameter.");
+            throw createUsageError("Empty n/ parameter.");
         }
         if (name != null && (name.contains("|") || name.indexOf('\n') >= 0 || name.indexOf('\r') >= 0)) {
-            throw invalid("The activity name must not contain | or line breaks.");
+            throw createUsageError("The activity name must not contain | or line breaks.");
         }
         if (name != null) {
             ActivityNameValidator.validate(name);
@@ -102,12 +99,12 @@ public class EditCommandParser {
 
     private int parseIndex(String token) throws ParseException {
         if (!INDEX_PATTERN.matcher(token).matches()) {
-            throw invalid("Invalid index '" + token + "'. Index must be a positive whole number.");
+            throw createUsageError("Invalid index '" + token + "'. Index must be a positive whole number.");
         }
         try {
             return Integer.parseInt(token);
         } catch (NumberFormatException exception) {
-            throw invalid("Index '" + token + "' is too large.");
+            throw createUsageError("Index '" + token + "' is too large.");
         }
     }
 
@@ -129,13 +126,13 @@ public class EditCommandParser {
             if (previousKey != null) {
                 store(fields, previousKey, arguments.substring(previousValueStart, matcher.start()).trim());
             } else if (!arguments.substring(0, matcher.start()).isBlank()) {
-                throw invalid("Unexpected text before the first parameter.");
+                throw createUsageError("Unexpected text before the first parameter.");
             }
             previousKey = matcher.group(1).toLowerCase(Locale.ROOT);
             previousValueStart = matcher.end();
         }
         if (previousKey == null) {
-            throw invalid("At least one field must be supplied.");
+            throw createUsageError("At least one field must be supplied.");
         }
         store(fields, previousKey, arguments.substring(previousValueStart).trim());
         return fields;
@@ -143,21 +140,18 @@ public class EditCommandParser {
 
     private void store(Map<String, String> fields, String key, String value) throws ParseException {
         if (value.isEmpty()) {
-            throw invalid("Empty " + key + "/ parameter.");
+            throw createUsageError("Empty " + key + "/ parameter.");
         }
         if (fields.putIfAbsent(key, value) != null) {
-            throw invalid("Duplicate " + key + "/ parameter.");
+            throw createUsageError("Duplicate " + key + "/ parameter.");
         }
     }
 
     private LocalDate parseDate(String value) throws ParseException {
         try {
-            if (!DATE_PATTERN.matcher(value).matches()) {
-                throw new DateTimeParseException("Wrong date format", value, 0);
-            }
-            return LocalDate.parse(value, DATE_FORMAT);
+            return ActivityDateParser.parse(value, clock);
         } catch (DateTimeParseException exception) {
-            throw invalid("Invalid date. Use YYYY-MM-DD and a real calendar date.");
+            throw createUsageError(ActivityDateParser.INVALID_DATE_MESSAGE);
         }
     }
 
@@ -168,7 +162,7 @@ public class EditCommandParser {
             }
             return LocalTime.parse(value, TIME_FORMAT);
         } catch (DateTimeParseException exception) {
-            throw invalid("Invalid time. Use 24-hour HH:mm (for example, 09:30).");
+            throw createUsageError("Invalid time. Use 24-hour HH:mm (for example, 09:30).");
         }
     }
 
@@ -176,7 +170,7 @@ public class EditCommandParser {
         try {
             return DemandLevel.valueOf(value.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException exception) {
-            throw invalid("Demand must be LOW, MEDIUM, or HIGH.");
+            throw createUsageError("Demand must be LOW, MEDIUM, or HIGH.");
         }
     }
 
@@ -189,11 +183,11 @@ public class EditCommandParser {
             Activity.validateRating(rating);
             return rating;
         } catch (IllegalArgumentException exception) {
-            throw invalid("The " + prefix + "/ rating must be a whole number from 1 to 5.");
+            throw createUsageError("The " + prefix + "/ rating must be a whole number from 1 to 5.");
         }
     }
 
-    private ParseException invalid(String message) {
+    private ParseException createUsageError(String message) {
         return new ParseException("[WARNING] " + message + "\n" + USAGE);
     }
 }

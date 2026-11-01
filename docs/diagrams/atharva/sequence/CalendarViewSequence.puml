@@ -1,4 +1,6 @@
-'@@author Atharva005
+/'
+// @@author Atharva005
+'/
 @startuml
 title Display a daily or seven-day calendar dashboard
 skinparam backgroundColor white
@@ -13,7 +15,7 @@ hide footbox
 
 actor "User" as User
 participant "ui:Ui" as UI
-participant "ConsoleHelper" as Console
+participant "ConsoleHelper" as Console <<class>>
 participant "parser:Parser" as Parser
 participant "activities:ActivityList" as Activities
 
@@ -46,7 +48,7 @@ deactivate Activities
 View -> View : format(...)
 alt selected period is empty
   note right of View
-    Return the period heading and warning only.
+    Return only the normal no-activities message, without a period heading.
     Do not append a summary or rating table.
   end note
 else selected period has activities
@@ -73,4 +75,6 @@ end note
 Console -> UI : showMessage(...)
 UI --> User : result message
 @enduml
-'@@author
+/'
+// @@author
+'/

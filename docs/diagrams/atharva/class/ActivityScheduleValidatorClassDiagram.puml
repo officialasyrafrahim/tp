@@ -1,4 +1,6 @@
-'@@author Atharva005
+/'
+// @@author Atharva005
+'/
 @startuml
 !pragma layout smetana
 title Activity schedule validation before add or edit
@@ -44,7 +46,7 @@ ActivityList --> "0..*" Activity : activities
 
 note bottom of ActivityScheduleValidator
   validate(candidate: Activity, activities: ActivityList,
-           replacedActivity: Activity, allowOverlap: boolean)
+           replacedActivity: Activity, isOverlapAllowed: boolean)
 
   Duplicate: same name ignoring case/outer spaces,
   and identical date, start and end.
@@ -56,4 +58,6 @@ note bottom of ActivityScheduleValidator
   Validation performs no mutation or file I/O.
 end note
 @enduml
-'@@author
+/'
+// @@author
+'/

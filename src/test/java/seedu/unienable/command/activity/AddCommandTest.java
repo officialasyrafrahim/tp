@@ -37,9 +37,9 @@ class AddCommandTest {
         assertEquals("Team Meeting", activities.getActivities().get(0).getName());
         assertFalse(activities.getActivities().get(0).isDone());
         assertEquals("Added activity: Team Meeting\nDate: 2026-10-20\nTime: 09:00 - 10:00\n"
-                + "Demand: MEDIUM\nImportance: -\nUrgency: -\nCommitment: -\nActivities in this session: 1",
+                + "Demand: MEDIUM\nImportance: -\nUrgency: -\nCommitment: -\nTotal activities: 1",
                 firstResult.getMessage());
-        assertTrue(secondResult.getMessage().contains("Activities in this session: 2"));
+        assertTrue(secondResult.getMessage().contains("Total activities: 2"));
         assertFalse(firstResult.isExit());
         assertTrue(firstResult.didChangeActivities());
     }
@@ -67,7 +67,7 @@ class AddCommandTest {
             assertEquals(ratings[i][2], added.getCommitment());
             assertFalse(added.isDone());
             assertEquals("Added activity: Meeting\nDate: 2026-10-20\nTime: 09:00 - 10:00\nDemand: HIGH\n"
-                    + expectedRatings[i] + "\nActivities in this session: 1", result.getMessage());
+                    + expectedRatings[i] + "\nTotal activities: 1", result.getMessage());
             assertTrue(result.didChangeActivities());
         }
     }

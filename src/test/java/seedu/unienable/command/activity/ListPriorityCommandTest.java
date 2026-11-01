@@ -30,12 +30,12 @@ class ListPriorityCommandTest {
     };
 
     @Test
-    void execute_onEmptyList_showsPriorityHeadingAndPlaceholder() throws Exception {
+    void execute_onEmptyList_showsOnlySorryMessage() throws Exception {
         var result = parser.parse("list priority").execute(activities, noWrites);
         assertFalse(result.isExit());
         assertFalse(result.didChangeActivities());
-        assertTrue(result.getMessage().startsWith("Activities by priority (highest first):"));
-        assertTrue(result.getMessage().endsWith("[WARNING] No activities yet."));
+        assertTrue(result.getMessage().equals("Sorry, the activity list is empty."));
+        assertTrue(result.getMessage().endsWith("Sorry, the activity list is empty."));
     }
 
     @Test
@@ -68,9 +68,9 @@ class ListPriorityCommandTest {
     }
 
     private void add(String name, String date, String start, Integer importance, Integer urgency,
-                     Integer commitment, boolean done) {
+            Integer commitment, boolean isDone) {
         activities.addActivity(new Activity(name, LocalDate.parse(date), LocalTime.parse(start),
-                LocalTime.parse(start).plusHours(1), DemandLevel.MEDIUM, done,
+                LocalTime.parse(start).plusHours(1), DemandLevel.MEDIUM, isDone,
                 importance, urgency, commitment));
     }
 }

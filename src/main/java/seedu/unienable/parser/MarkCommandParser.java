@@ -25,8 +25,8 @@ public class MarkCommandParser {
      * Parses {@code mark INDEX}.
      *
      * @param words command words beginning with mark.
-     * @return a mark command
-     * @throws ParseException when the syntax is invalid
+     * @return a mark command.
+     * @throws ParseException when the syntax is invalid.
      */
     public Command parseMark(String[] words) throws ParseException {
         return parse(words, "mark", true);
@@ -36,14 +36,14 @@ public class MarkCommandParser {
      * Parses {@code unmark INDEX}.
      *
      * @param words command words beginning with unmark.
-     * @return an unmark command
-     * @throws ParseException when the syntax is invalid
+     * @return an unmark command.
+     * @throws ParseException when the syntax is invalid.
      */
     public Command parseUnmark(String[] words) throws ParseException {
         return parse(words, "unmark", false);
     }
 
-    private Command parse(String[] words, String commandName, boolean mark) throws ParseException {
+    private Command parse(String[] words, String commandName, boolean isMark) throws ParseException {
         String usage = "Usage: " + commandName + " INDEX\nExample: " + commandName + " 1";
         if (words.length != 2 || !INDEX_PATTERN.matcher(words[1]).matches()) {
             throw new ParseException(WARNING_MESSAGE + " " + commandName
@@ -51,7 +51,7 @@ public class MarkCommandParser {
         }
         try {
             int index = Integer.parseInt(words[1]);
-            return mark ? new MarkCommand(index) : new UnmarkCommand(index);
+            return isMark ? new MarkCommand(index) : new UnmarkCommand(index);
         } catch (NumberFormatException exception) {
             throw new ParseException(WARNING_MESSAGE + " Index is too large.\n" + usage);
         }

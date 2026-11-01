@@ -26,6 +26,16 @@ public class FacilityCommandParser {
     private static final String WARNING_MESSAGE = "[WARNING]";
 
     /**
+     * Identifies the required feature filter of a facility search.
+     */
+    private static final String TYPE_PREFIX = "type/";
+
+    /**
+     * Identifies the optional status filter of a facility search.
+     */
+    private static final String STATUS_PREFIX = "status/";
+
+    /**
      * Reference data used to construct facility commands; null when unavailable.
      */
     private final FacilityManager facilityManager;
@@ -43,8 +53,8 @@ public class FacilityCommandParser {
      * Recognizes facility LOCATION, facility list, and facility find.
      *
      * @param words command words, beginning with facility.
-     * @return the facility command to execute
-     * @throws ParseException if the facility command is invalid or unavailable
+     * @return the facility command to execute.
+     * @throws ParseException if the facility command is invalid or unavailable.
      */
     public Command parseFacility(String[] words) throws ParseException {
         if (words.length >= 2 && "view".equalsIgnoreCase(words[1])) {
@@ -79,19 +89,19 @@ public class FacilityCommandParser {
      * Parses the required feature type and optional accessibility status.
      *
      * @param words words in the command line.
-     * @return the facility feature search command
-     * @throws ParseException if the feature or status is invalid
+     * @return the facility feature search command.
+     * @throws ParseException if the feature or status is invalid.
      */
     private Command parseFacilityFind(String[] words) throws ParseException {
         String usage = "Usage: facility find type/FEATURE [status/YES|NO|UNKNOWN]"
                 + "\nExample: facility find type/LIFT status/NO";
         if (words.length < 3 || words.length > 4
-                || !words[2].regionMatches(true, 0, "type/", 0, 5)
-                || words[2].length() == 5) {
+                || !words[2].regionMatches(true, 0, TYPE_PREFIX, 0, TYPE_PREFIX.length())
+                || words[2].length() == TYPE_PREFIX.length()) {
             throw new ParseException(WARNING_MESSAGE + " Invalid facility find filters.\n" + usage);
         }
 
-        String featureName = words[2].substring(5);
+        String featureName = words[2].substring(TYPE_PREFIX.length());
         FacilityFeature.Type type;
         try {
             type = FacilityFeature.Type.valueOf(featureName.toUpperCase(Locale.ROOT));
@@ -104,12 +114,12 @@ public class FacilityCommandParser {
 
         AccessibilityStatus status = AccessibilityStatus.YES;
         if (words.length == 4) {
-            if (!words[3].regionMatches(true, 0, "status/", 0, 7)
-                    || words[3].length() == 7) {
+            if (!words[3].regionMatches(true, 0, STATUS_PREFIX, 0, STATUS_PREFIX.length())
+                    || words[3].length() == STATUS_PREFIX.length()) {
                 throw new ParseException(WARNING_MESSAGE
                         + " Invalid facility find filters.\n" + usage);
             }
-            String statusName = words[3].substring(7);
+            String statusName = words[3].substring(STATUS_PREFIX.length());
             try {
                 status = AccessibilityStatus.valueOf(statusName.toUpperCase(Locale.ROOT));
             } catch (IllegalArgumentException exception) {

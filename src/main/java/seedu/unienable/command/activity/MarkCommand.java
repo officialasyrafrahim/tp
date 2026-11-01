@@ -28,17 +28,17 @@ public class MarkCommand extends Command {
      *
      * @param activities shared activity collection.
      * @param storage activity storage, not used directly.
-     * @return command result for the console
-     * @throws UniEnableException when the displayed index is invalid
+     * @return command result for the console.
+     * @throws UniEnableException when the displayed index is invalid.
      */
     @Override
     public CommandResult execute(ActivityList activities, Storage storage) throws UniEnableException {
         Activity activity = activities.getByDisplayedIndex(displayedIndex);
-        boolean changed = activities.setDoneAtDisplayedIndex(displayedIndex, true);
-        String message = changed
+        boolean isChanged = activities.setDoneAtDisplayedIndex(displayedIndex, true);
+        String message = isChanged
                 ? "Marked activity as done: " + activity.getName()
                 : "[WARNING] Activity is already marked as done: " + activity.getName();
-        return new CommandResult(message, false, changed);
+        return new CommandResult(message, false, isChanged);
     }
 }
 //@@author

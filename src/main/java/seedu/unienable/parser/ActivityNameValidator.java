@@ -19,13 +19,13 @@ final class ActivityNameValidator {
      * Slash escaping and quoted-name syntax are not supported.
      *
      * @param input extracted activity name.
-     * @throws ParseException if a backslash, comma, or quotation mark is present.
+     * @throws ParseException if a backslash or double quotation mark is present.
      */
     static void rejectForbiddenPunctuation(String input) throws ParseException {
-        if (input.indexOf('"') >= 0 || input.indexOf('\'') >= 0
-                || input.indexOf('\\') >= 0 || input.indexOf(',') >= 0) {
-            throw new ParseException("[WARNING] Activity names must not contain backslashes (\\), commas (,),"
-                    + " or quotation marks (' or \"). Slash (/) is allowed; /\\ and \\/ are not.");
+        if (input.indexOf('"') >= 0
+                || input.indexOf('\\') >= 0) {
+            throw new ParseException("[WARNING] Activity names must not contain backslashes (\\)"
+                    + " or double quotation marks.");
         }
     }
 

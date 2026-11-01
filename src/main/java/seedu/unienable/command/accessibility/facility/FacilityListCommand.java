@@ -31,7 +31,7 @@ public class FacilityListCommand extends Command {
      *
      * @param activities shared activity collection, not modified by this command.
      * @param storage activity persistence service, not used by this command.
-     * @return non-exiting result containing the facility list
+     * @return non-exiting result containing the facility list.
      */
     @Override
     public CommandResult execute(ActivityList activities, Storage storage) {

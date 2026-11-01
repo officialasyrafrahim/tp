@@ -1,12 +1,9 @@
 # UniEnable
 
-UniEnable is a Java 25 command-line application for managing dated activities and
-checking campus accessibility reference information. It supports activity editing,
-search, completion, demand and priority views, calendar dashboards, automatic
-persistence with corruption recovery, facility queries, and accessible route search.
+UniEnable is a Java 25 command-line application that helps university students, particularly those with ASD, ADHD, or mobility constraints, organize academic and daily commitments and check campus accessibility information. It combines dated activities, optional importance, urgency and commitment ratings, priority and calendar views, completion tracking, and automatic local saving with facility searches and shortest recorded accessible-route queries using sample data for nine NUS FASS campus hubs.
 
-Read the [User Guide](docs/UserGuide.md) for commands and examples, or the
-[Developer Guide](docs/DeveloperGuide.md) for design, requirements, diagrams,
+Read the [User Guide](https://ay2627s1-cs2113-t10-4.github.io/tp/UserGuide.html) for commands and examples, or the
+[Developer Guide](https://ay2627s1-cs2113-t10-4.github.io/tp/DeveloperGuide.html) for design, requirements, diagrams,
 and testing instructions. Accessibility results use bundled sample data.
 
 ## Setting up in Intellij
@@ -74,8 +71,8 @@ maps PlantUML sources to [rendered images](docs/images/README.md) and explains h
 Luke contributes the activity-creation class diagram, the name and parameter
 validation class/sequence pairs, and the
 [architecture diagram](docs/diagrams/luke/architecture/ArchitectureDiagram.puml).
-Atharva contributes the add sequence, calendar dashboards, topic help, and
-schedule validation diagrams. See the diagram index for each source/image pair.
+Atharva contributes the add sequence, calendar dashboards, topic help, schedule
+validation, and date parsing diagrams. See the diagram index for each source/image pair.
 
 For documentation publication and link checks, see the
 [publication notes](docs/README.md#publication-and-link-checks).

@@ -1,4 +1,6 @@
-'@@author officialasyrafrahim
+/'
+// @@author officialasyrafrahim
+'/
 @startuml
 !pragma layout smetana
 title Delete an activity using its chronological index
@@ -14,7 +16,7 @@ hide circle
 hide empty members
 
 abstract class Command {
-  +execute(...): CommandResult
+  {abstract} +execute(...): CommandResult
 }
 class Parser {
   +parse(input: String): Command
@@ -29,6 +31,7 @@ class DeleteCommand {
 }
 class ActivityList {
   +deleteByDisplayedIndex(displayedIndex: int): Activity
+  +getByDisplayedIndex(displayedIndex: int): Activity
   +getCanonicalView(): List<Activity>
   +getActivities(): List<Activity>
 }
@@ -40,7 +43,7 @@ class CommandResult {
   +didChangeActivities(): boolean
 }
 Command <|-- DeleteCommand
-Parser ..> ListDeleteCommandParser : delegates delete
+Parser *-- ListDeleteCommandParser : delegates delete
 ListDeleteCommandParser ..> DeleteCommand : creates with index
 DeleteCommand ..> ActivityList : removes chronological selection
 DeleteCommand ..> Activity : reads removed details
@@ -56,4 +59,6 @@ note bottom of CommandResult
   ConsoleHelper marks it unsaved, saves, then displays the confirmation.
 end note
 @enduml
-'@@author
+/'
+// @@author
+'/

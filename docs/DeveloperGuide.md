@@ -1,7 +1,8 @@
 # UniEnable Developer Guide
 
-UniEnable is a Java command-line application for planning activities and checking
-campus accessibility reference information. This guide explains its components,
+UniEnable is a Java 25 command-line application that helps university students, particularly those with ASD, ADHD, or mobility constraints, organize academic and daily commitments and check campus accessibility information. It combines dated activities, optional importance, urgency and commitment ratings, priority and calendar views, completion tracking, and automatic local saving with facility searches and shortest recorded accessible-route queries using sample data for nine NUS FASS campus hubs.
+
+This guide explains its components,
 key implementation decisions, and how to test changes. For command syntax,
 warnings, and worked examples, use the [User Guide](UserGuide.md).
 
@@ -46,10 +47,11 @@ the [NUS FASS *Access Routes / Faculty Map*](https://osa.nus.edu.sg/wp-content/u
 updated 24 February 2025. The map is an effort led by the Student Accessibility
 Unit (SAU), Office of Student Affairs (OSA), National University of Singapore (NUS).
 
-The PlantUML connectivity graph is UniEnable's own schematic representation of
-its text datasets. The linked NUS PDF provides the original campus map.
-
 ## Setting up and getting started
+
+The latest release is [UniEnable v2.1](https://github.com/AY2627S1-CS2113-T10-4/tp/releases/tag/v2.1).
+Its executable JAR requires Java 25. To inspect or reproduce the released code,
+use the repository's `v2.1` tag; `master` may contain later development changes.
 
 Install **JDK 25** and clone the repository. Check `java -version` before building
 or running the application. In IntelliJ IDEA, import the project as a Gradle
@@ -92,11 +94,16 @@ Facility and connection data come from `src/main/resources/facilities.txt` and
 UniEnable runs in one process. The diagram groups classes by responsibility;
 the groups are not separate services. Editable diagrams are listed in the
 [diagram index](diagrams/README.md). Select an embedded diagram to open its
-full-size image using the link below it.
+full-size image using the link below it. Diagrams retain their original
+text size in a horizontally scrollable region. Scroll sideways, or focus the
+region with Tab and use the arrow keys; the enlarge link opens the entire image.
 
 <!-- @@author lukelouyu -->
 
-![UniEnable architecture](images/luke/architecture/ArchitectureDiagram.png)
+<div role="region" aria-label="UniEnable architecture (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/luke/architecture/ArchitectureDiagram.png" alt="UniEnable architecture" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/luke/architecture/ArchitectureDiagram.png) | [PlantUML source](diagrams/luke/architecture/ArchitectureDiagram.puml).
 
@@ -135,8 +142,9 @@ a `CommandResult` containing a message, an exit flag and an activity-change flag
 `ConsoleHelper` uses these flags to coordinate automatic saving and shutdown.
 Read-only commands leave the activity-change flag unset.
 
-Time-sensitive parsers and commands share an injected `Clock`. Production uses
-the local clock; tests supply a fixed clock to reproduce boundary cases.
+The `today` and `tomorrow` date words, time-sensitive edit validation and queries
+share an injected `Clock`. Production uses the local clock; tests supply a fixed
+clock to reproduce boundary cases.
 
 ### Model component
 
@@ -183,9 +191,9 @@ cases that validation and testing must cover.
 
 <a id="activity-name-punctuation"></a>
 
-**Name punctuation and slash syntax:** Names prohibit backslashes (`\`), commas
-(`,`), single quotation marks (`'`, including apostrophes), double quotation marks
-(`"`), pipes and line breaks. Slash (`/`) is allowed: `and/or` and `w/o` are valid.
+**Name punctuation and slash syntax:** **Commas and apostrophes are allowed.**
+Names prohibit backslashes (`\`) and double quotation marks
+(`"`), pipes and line breaks. Every slash in add/edit input must belong to a supported field prefix.
 Both `/\` and `\/` contain a forbidden backslash. Quoting and slash escaping are
 unsupported; [prefix-like text](#activity-parameter-validation) may still be reserved.
 
@@ -193,8 +201,8 @@ unsupported; [prefix-like text](#activity-parameter-validation) may still be res
 
 **Why the name character set is restricted.** Supplied activity names use a
 conservative whitelist. The restricted punctuation (backslashes, single and
-double quotes, commas) carries special meaning in other grammars—escaping,
-quoting, or field separation—so accepting it would add ambiguous edge cases in
+double quotes) carries special meaning in other grammars—escaping,
+or quoting—so accepting it would add ambiguous edge cases in
 parsing, storage, and any future data exchange. Keeping these characters out
 shrinks the input space, which avoids unnecessary error analysis and incorrect
 results, lowers the chance of bugs, and makes the parser and storage simpler to
@@ -202,8 +210,8 @@ implement and maintain. The cost is that a few names must be reworded; this is a
 simplicity and robustness choice rather than a requirement of the current `|`
 delimiter.
 
-Raw add/edit arguments are checked only for pipes and line breaks. Extracted
-names receive the name checks; other fields use their own validators so errors
+Raw add/edit arguments reject pipes, line breaks and unsupported slash tokens.
+Extracted names receive the name checks; other fields use their own validators so errors
 identify the field that failed. The [UG adding rules](UserGuide.md#adding-an-activity-add)
 and [error handling](UserGuide.md#error-handling) provide the warning text.
 
@@ -211,11 +219,17 @@ and [error handling](UserGuide.md#error-handling) provide the warning text.
 
 <!-- @@author lukelouyu -->
 
-![Name validation classes](images/luke/class/ActivityNameValidatorClassDiagram.png)
+<div role="region" aria-label="Name validation classes (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/luke/class/ActivityNameValidatorClassDiagram.png" alt="Name validation classes" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/luke/class/ActivityNameValidatorClassDiagram.png) | [PlantUML source](diagrams/luke/class/ActivityNameValidatorClassDiagram.puml).
 
-![Name validation sequence](images/luke/sequence/ActivityNameValidationSequence.png)
+<div role="region" aria-label="Name validation sequence (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/luke/sequence/ActivityNameValidationSequence.png" alt="Name validation sequence" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/luke/sequence/ActivityNameValidationSequence.png) | [PlantUML source](diagrams/luke/sequence/ActivityNameValidationSequence.puml).
 
@@ -252,8 +266,8 @@ components; the table above gives their Java package locations.
 `AddCommandParser` validates the fields and creates an `AddCommand`, whose
 constructor creates an incomplete activity.
 Demand defaults to `MEDIUM`; omitted ratings remain unset. The end must be later
-than the start on the same day and strictly later than the current local time.
-Historical activities are always rejected, including with `overlap/ALLOW`.
+than the start on the same day. Activities whose end is at or before the current local time are rejected.
+Ongoing activities with a future end are accepted; ended activities cannot be edited.
 
 `AddCommand` applies the shared [schedule checks](#activity-schedule-validation)
 before insertion. A successful insertion sets the activity-change flag, which
@@ -264,7 +278,10 @@ failures leave the collection unchanged.
 
 <!-- @@author lukelouyu -->
 
-![Activity creation classes](images/luke/class/ActivityCreationClassDiagram.png)
+<div role="region" aria-label="Activity creation classes (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/luke/class/ActivityCreationClassDiagram.png" alt="Activity creation classes" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/luke/class/ActivityCreationClassDiagram.png) | [PlantUML source](diagrams/luke/class/ActivityCreationClassDiagram.puml).
 
@@ -272,9 +289,51 @@ failures leave the collection unchanged.
 
 <!-- @@author Atharva005 -->
 
-![Adding an activity](images/atharva/sequence/AddActivitySequence.png)
+<div role="region" aria-label="Adding an activity (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/atharva/sequence/AddActivitySequence.png" alt="Adding an activity" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/atharva/sequence/AddActivitySequence.png) | [PlantUML source](diagrams/atharva/sequence/AddActivitySequence.puml).
+
+#### Date parsing
+
+`ActivityDateParser` converts the `d/` value for both add and edit, so the two
+commands accept the same input: a strict `YYYY-MM-DD` date, `today` or `tomorrow`.
+The words ignore letter case and resolve against the parser's `Clock`. The result
+is an ordinary `LocalDate`, so the same ended-activity and schedule checks apply.
+
+Resolving the word during parsing keeps each saved record on a fixed date. Storing
+`today` itself would move the activity to a new day at every restart.
+
+<div role="region" aria-label="Date parsing classes (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/atharva/class/ActivityDateParserClassDiagram.png" alt="Date parsing classes" style="max-width: none;">
+</div>
+
+[Enlarge diagram](images/atharva/class/ActivityDateParserClassDiagram.png) | [PlantUML source](diagrams/atharva/class/ActivityDateParserClassDiagram.puml).
+
+<div role="region" aria-label="Reading a date value (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/atharva/sequence/ActivityDateParsingSequence.png" alt="Reading a date value" style="max-width: none;">
+</div>
+
+[Enlarge diagram](images/atharva/sequence/ActivityDateParsingSequence.png) | [PlantUML source](diagrams/atharva/sequence/ActivityDateParsingSequence.puml).
+
+#### Activity state snapshot
+
+The illustrative snapshot below follows adding Study and Consultation, then
+marking Study complete. Each `Activity` retains its own completion and optional
+ratings; unset ratings are `null` in memory. The membership links abstract away
+the backing collection. Display indexes are computed by ordered views rather
+than stored on these objects.
+
+<div role="region" aria-label="Illustrative activity state (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/atharva/object/ActivityStateSnapshot.png" alt="Illustrative activity state" style="max-width: none;">
+</div>
+
+[Enlarge diagram](images/atharva/object/ActivityStateSnapshot.png) | [PlantUML source](diagrams/atharva/object/ActivityStateSnapshot.puml).
 
 #### Calendar dashboards
 
@@ -285,14 +344,20 @@ ratings and demand summaries without changing data.
 
 Dashboard row numbers belong to the selected period; indexed changes use the full
 chronological list. The rating table fits 80 terminal columns and shortens labels
-to 26 columns without splitting grapheme clusters. Full names remain in schedules
+to 26 columns without splitting grapheme clusters. Schedule rows pad names and indexes to align rating columns. Full names remain in schedules
 and storage. See the [UG dashboard examples](UserGuide.md#viewing-calendar-dashboards-view).
 
-![Calendar dashboard classes](images/atharva/class/CalendarViewClassDiagram.png)
+<div role="region" aria-label="Calendar dashboard classes (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/atharva/class/CalendarViewClassDiagram.png" alt="Calendar dashboard classes" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/atharva/class/CalendarViewClassDiagram.png) | [PlantUML source](diagrams/atharva/class/CalendarViewClassDiagram.puml).
 
-![Calendar dashboard sequence](images/atharva/sequence/CalendarViewSequence.png)
+<div role="region" aria-label="Calendar dashboard sequence (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/atharva/sequence/CalendarViewSequence.png" alt="Calendar dashboard sequence" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/atharva/sequence/CalendarViewSequence.png) | [PlantUML source](diagrams/atharva/sequence/CalendarViewSequence.puml).
 
@@ -304,11 +369,17 @@ words produce a parsing warning. Help works without reference data and returns
 text without executing the described command or saving activities.
 See the [UG help reference](UserGuide.md#viewing-command-help-help).
 
-![Help classes](images/atharva/class/TopicHelpClassDiagram.png)
+<div role="region" aria-label="Help classes (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/atharva/class/TopicHelpClassDiagram.png" alt="Help classes" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/atharva/class/TopicHelpClassDiagram.png) | [PlantUML source](diagrams/atharva/class/TopicHelpClassDiagram.puml).
 
-![Topic help sequence](images/atharva/sequence/TopicHelpSequence.png)
+<div role="region" aria-label="Topic help sequence (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/atharva/sequence/TopicHelpSequence.png" alt="Topic help sequence" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/atharva/sequence/TopicHelpSequence.png) | [PlantUML source](diagrams/atharva/sequence/TopicHelpSequence.puml).
 
@@ -324,11 +395,27 @@ See the [UG help reference](UserGuide.md#viewing-command-help-help).
 This snapshot defines the one-based indexes used by edit, delete, mark and unmark.
 Queries and formatting leave the backing collection unchanged.
 
-![Chronological listing classes](images/asyraf/class/ListActivityClassDiagram.png)
+Empty chronological, demand and priority views return `Sorry, the activity list is empty.`.
+
+`ActivityList.NO_ACTIVITIES_MESSAGE` supplies empty-list feedback for listing and
+indexed operations. Empty indexed operations return it through
+`InvalidIndexException`; the console displays the message unchanged. Query-specific
+feedback follows the [UG expected outputs](UserGuide.md#error-handling).
+Invalid syntax or non-positive indexes produce warnings. No activity is changed
+or saved when no record can be read or modified. Deleting the final activity saves
+its removal and appends `Sorry, the activity list is empty.` to the confirmation.
+
+<div role="region" aria-label="Chronological listing classes (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/asyraf/class/ListActivityClassDiagram.png" alt="Chronological listing classes" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/asyraf/class/ListActivityClassDiagram.png) | [PlantUML source](diagrams/asyraf/class/ListActivityClassDiagram.puml).
 
-![Chronological listing sequence](images/asyraf/sequence/ListActivitySequence.png)
+<div role="region" aria-label="Chronological listing sequence (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/asyraf/sequence/ListActivitySequence.png" alt="Chronological listing sequence" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/asyraf/sequence/ListActivitySequence.png) | [PlantUML source](diagrams/asyraf/sequence/ListActivitySequence.puml).
 
@@ -338,11 +425,17 @@ Queries and formatting leave the backing collection unchanged.
 start time and insertion order. The formatter also receives the canonical view
 to keep each activity's full-list index. Completed activities remain included.
 
-![Demand listing classes](images/asyraf/class/ListDemandClassDiagram.png)
+<div role="region" aria-label="Demand listing classes (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/asyraf/class/ListDemandClassDiagram.png" alt="Demand listing classes" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/asyraf/class/ListDemandClassDiagram.png) | [PlantUML source](diagrams/asyraf/class/ListDemandClassDiagram.puml).
 
-![Demand listing sequence](images/asyraf/sequence/ListDemandSequence.png)
+<div role="region" aria-label="Demand listing sequence (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/asyraf/sequence/ListDemandSequence.png" alt="Demand listing sequence" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/asyraf/sequence/ListDemandSequence.png) | [PlantUML source](diagrams/asyraf/sequence/ListDemandSequence.puml).
 
@@ -353,11 +446,17 @@ to keep each activity's full-list index. Completed activities remain included.
 chronological activity. Zero and out-of-range indexes are rejected. Successful
 deletion sets the activity-change flag, including when the last activity is removed.
 
-![Deletion classes](images/asyraf/class/DeleteActivityClassDiagram.png)
+<div role="region" aria-label="Deletion classes (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/asyraf/class/DeleteActivityClassDiagram.png" alt="Deletion classes" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/asyraf/class/DeleteActivityClassDiagram.png) | [PlantUML source](diagrams/asyraf/class/DeleteActivityClassDiagram.puml).
 
-![Deletion sequence](images/asyraf/sequence/DeleteActivitySequence.png)
+<div role="region" aria-label="Deletion sequence (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/asyraf/sequence/DeleteActivitySequence.png" alt="Deletion sequence" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/asyraf/sequence/DeleteActivitySequence.png) | [PlantUML source](diagrams/asyraf/sequence/DeleteActivitySequence.puml).
 
@@ -372,11 +471,17 @@ automatically with time. Demand and completion do not affect the score.
 first and puts unavailable scores last. Ties use canonical order. The formatter
 retains canonical indexes; missing ratings display `-` and unavailable scores `NA`.
 
-![Priority listing classes](images/asyraf/class/ListPriorityClassDiagram.png)
+<div role="region" aria-label="Priority listing classes (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/asyraf/class/ListPriorityClassDiagram.png" alt="Priority listing classes" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/asyraf/class/ListPriorityClassDiagram.png) | [PlantUML source](diagrams/asyraf/class/ListPriorityClassDiagram.puml).
 
-![Priority listing sequence](images/asyraf/sequence/ListPrioritySequence.png)
+<div role="region" aria-label="Priority listing sequence (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/asyraf/sequence/ListPrioritySequence.png" alt="Priority listing sequence" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/asyraf/sequence/ListPrioritySequence.png) | [PlantUML source](diagrams/asyraf/sequence/ListPrioritySequence.puml).
 
@@ -387,11 +492,17 @@ an end strictly before that time. Ongoing activities and ends exactly now are
 excluded. `ActivityListFormatter` labels results as today, earlier this Monday-to-
 Sunday week, or earlier. Results retain chronological indexes and are read-only.
 
-![Overdue query classes](images/asyraf/class/OverdueActivityClassDiagram.png)
+<div role="region" aria-label="Overdue query classes (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/asyraf/class/OverdueActivityClassDiagram.png" alt="Overdue query classes" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/asyraf/class/OverdueActivityClassDiagram.png) | [PlantUML source](diagrams/asyraf/class/OverdueActivityClassDiagram.puml).
 
-![Overdue query sequence](images/asyraf/sequence/OverdueActivitySequence.png)
+<div role="region" aria-label="Overdue query sequence (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/asyraf/sequence/OverdueActivitySequence.png" alt="Overdue query sequence" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/asyraf/sequence/OverdueActivitySequence.png) | [PlantUML source](diagrams/asyraf/sequence/OverdueActivitySequence.puml).
 
@@ -399,14 +510,22 @@ Sunday week, or earlier. Results retain chronological indexes and are read-only.
 
 `NextCommand` uses the captured local time to select the earliest incomplete
 activity whose start is strictly later than now. Starts exactly now are excluded;
-equal starts retain insertion order. The formatter keeps its canonical index or
-returns an empty-result warning. See the [UG time queries](UserGuide.md#viewing-the-next-activity-next).
+equal starts retain insertion order. The formatter keeps the selected activity's
+canonical index, or returns `Sorry, no upcoming incomplete activities exist.`.
 
-![Next activity classes](images/asyraf/class/NextActivityClassDiagram.png)
+See the [UG time queries](UserGuide.md#viewing-the-next-activity-next).
+
+<div role="region" aria-label="Next activity classes (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/asyraf/class/NextActivityClassDiagram.png" alt="Next activity classes" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/asyraf/class/NextActivityClassDiagram.png) | [PlantUML source](diagrams/asyraf/class/NextActivityClassDiagram.puml).
 
-![Next activity sequence](images/asyraf/sequence/NextActivitySequence.png)
+<div role="region" aria-label="Next activity sequence (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/asyraf/sequence/NextActivitySequence.png" alt="Next activity sequence" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/asyraf/sequence/NextActivitySequence.png) | [PlantUML source](diagrams/asyraf/sequence/NextActivitySequence.puml).
 
@@ -418,15 +537,20 @@ returns an empty-result warning. See the [UG time queries](UserGuide.md#viewing-
 
 #### Editing activities
 
-`EditCommandParser` collects changes in immutable `EditCommand.Fields`.
+> **Design constraint: ended activities cannot be edited or rescheduled.** The
+> existing end date/time is checked before any replacement is built. An end at
+> or before local now rejects every edit, even if the requested date is in the future.
+
+`EditCommandParser` collects changes in immutable `EditCommand.Fields`, reading
+`d/` through the shared [`ActivityDateParser`](#date-parsing).
 `EditCommand` selects the activity by its chronological index and checks the
 clock once. Activities ending at or before now reject every edit, including
 metadata changes and rescheduling into the future.
 
 Omitted fields and completion stay unchanged. Date/time edits must end after
-both the start and now, on the same day. Name/schedule edits also check for
-duplicates and clashes, excluding the original activity; demand/rating-only
-edits skip this check. Validation finishes before replacement, so rejected edits
+both the start and now, on the same day. Every edit checks duplicates, excluding the original activity. Only actual
+date/time changes require a fresh overlap approval; name, demand and rating
+changes preserve existing overlaps. Validation finishes before replacement, so rejected edits
 change nothing. Refresh indexes after a successful edit.
 
 <a id="ended-activity-edit-rationale"></a>
@@ -436,11 +560,17 @@ testing simpler: ended activities are locked for editing. This avoids separate
 rules for changing historical details or moving records back into the future.
 To repeat a past activity, add a new one and preserve the original record.
 
-![Editing classes](images/oliver/class/EditActivityClassDiagram.png)
+<div role="region" aria-label="Editing classes (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/oliver/class/EditActivityClassDiagram.png" alt="Editing classes" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/oliver/class/EditActivityClassDiagram.png) | [PlantUML source](diagrams/oliver/class/EditActivityClassDiagram.puml).
 
-![Editing an eligible activity](images/oliver/sequence/EditActivitySequence.png)
+<div role="region" aria-label="Editing an eligible activity (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/oliver/sequence/EditActivitySequence.png" alt="Editing an eligible activity" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/oliver/sequence/EditActivitySequence.png) | [PlantUML source](diagrams/oliver/sequence/EditActivitySequence.puml).
 
@@ -452,11 +582,17 @@ To repeat a past activity, add a new one and preserve the original record.
 `ActivityList.findByName()`. The formatter receives matches and the canonical
 view to retain full-list indexes. Searching changes no state and requests no save.
 
-![Find Activities - Class Diagram](images/oliver/class/FindActivityClassDiagram.png)
+<div role="region" aria-label="Find Activities - Class Diagram (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/oliver/class/FindActivityClassDiagram.png" alt="Find Activities - Class Diagram" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/oliver/class/FindActivityClassDiagram.png) | [PlantUML source](diagrams/oliver/class/FindActivityClassDiagram.puml).
 
-![Find Activities - Sequence Diagram](images/oliver/sequence/FindActivitySequence.png)
+<div role="region" aria-label="Find Activities - Sequence Diagram (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/oliver/sequence/FindActivitySequence.png" alt="Find Activities - Sequence Diagram" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/oliver/sequence/FindActivitySequence.png) | [PlantUML source](diagrams/oliver/sequence/FindActivitySequence.puml).
 
@@ -466,11 +602,17 @@ view to retain full-list indexes. Searching changes no state and requests no sav
 The result requests saving only when completion changes; an invalid index or an
 already-complete activity produces a warning. Other fields are preserved.
 
-![Marking classes](images/oliver/class/MarkActivityClassDiagram.png)
+<div role="region" aria-label="Marking classes (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/oliver/class/MarkActivityClassDiagram.png" alt="Marking classes" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/oliver/class/MarkActivityClassDiagram.png) | [PlantUML source](diagrams/oliver/class/MarkActivityClassDiagram.puml).
 
-![Marking sequence](images/oliver/sequence/MarkActivitySequence.png)
+<div role="region" aria-label="Marking sequence (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/oliver/sequence/MarkActivitySequence.png" alt="Marking sequence" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/oliver/sequence/MarkActivitySequence.png) | [PlantUML source](diagrams/oliver/sequence/MarkActivitySequence.puml).
 
@@ -481,17 +623,25 @@ An already-incomplete activity produces a warning without saving. Completion
 commands can act on past records; the
 [ended-activity edit restriction](#ended-activity-edit-rationale) applies to `edit`.
 
-![Unmarking classes](images/oliver/class/UnmarkActivityClassDiagram.png)
+<div role="region" aria-label="Unmarking classes (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/oliver/class/UnmarkActivityClassDiagram.png" alt="Unmarking classes" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/oliver/class/UnmarkActivityClassDiagram.png) | [PlantUML source](diagrams/oliver/class/UnmarkActivityClassDiagram.puml).
 
-![Unmarking sequence](images/oliver/sequence/UnmarkActivitySequence.png)
+<div role="region" aria-label="Unmarking sequence (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/oliver/sequence/UnmarkActivitySequence.png" alt="Unmarking sequence" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/oliver/sequence/UnmarkActivitySequence.png) | [PlantUML source](diagrams/oliver/sequence/UnmarkActivitySequence.puml).
 
 #### Completion and persistence
 
-`Storage` reads UTF-8 records in insertion order. Saves use nine pipe-separated
+`Storage` decodes each UTF-8 record independently in insertion order. Invalid
+encoding skips only that row and produces a line-numbered warning. Raw bytes are
+preserved until a recovery save verifies the original backup. Saves use nine pipe-separated
 fields; unset ratings are `-`, and `DONE` is `true` or `false`:
 
 ```text
@@ -523,11 +673,17 @@ Add, edit and delete reference this interaction for saving and display; it does
 not execute another command. The separate [marking sequence](#marking-activities)
 shows how a completion command produces its result.
 
-![Persistence classes](images/oliver/class/ActivityPersistenceClassDiagram.png)
+<div role="region" aria-label="Persistence classes (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/oliver/class/ActivityPersistenceClassDiagram.png" alt="Persistence classes" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/oliver/class/ActivityPersistenceClassDiagram.png) | [PlantUML source](diagrams/oliver/class/ActivityPersistenceClassDiagram.puml).
 
-![Conditional automatic saving](images/oliver/sequence/CompletionAndSaveSequence.png)
+<div role="region" aria-label="Conditional automatic saving (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/oliver/sequence/CompletionAndSaveSequence.png" alt="Conditional automatic saving" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/oliver/sequence/CompletionAndSaveSequence.png) | [PlantUML source](diagrams/oliver/sequence/CompletionAndSaveSequence.puml).
 
@@ -548,26 +704,33 @@ omitted add ratings stay unset. Ratings are stored unchanged and used by the
 
 #### Activity parameter validation
 
-Before field extraction, add and edit use `ActivityParameterValidator` to suggest
-corrections for unknown alphanumeric prefixes. It detects one insertion, deletion,
-substitution or adjacent swap between multi-letter tokens; `demm/` and `dem1/`
-suggest `dem/`. Known prefixes and single-letter tokens are skipped.
+Before field extraction, `ActivityParameterValidator` checks every slash token,
+including slash text in the first word of a name. Only `n/`, `d/`, `s/`, `e/`,
+`dem/`, `imp/`, `urg/`, `com/`, and `overlap/` are supported, ignoring case, and
+prefixes must start at a whitespace boundary. Unsupported words before `/` warn
+before command construction or mutation. Literal slashes in names are unsupported.
 
-Unrecognized tokens remain in the preceding field, potentially causing misleading
-errors or becoming part of a name. Early detection gives more specific feedback,
-but can reject literal text such as `dim/sum` at a field boundary. Actionable
-feedback takes priority; affected names must be reworded. This tradeoff is separate
-from the [name-character restrictions](#name-character-set-rationale).
+One insertion, deletion, substitution or adjacent swap can add a correction
+suggestion: `demm/` and `dem1/` suggest `dem/`. Suggestions do not determine
+validity: every unsupported token is rejected, including single-letter tokens
+such as `t/`. This prevents unknown fields being absorbed into a preceding name,
+date or time. Historical names loaded from storage keep their original text.
 
 <!-- @@author -->
 
 <!-- @@author lukelouyu -->
 
-![Parameter validation classes](images/luke/class/ActivityParameterValidatorClassDiagram.png)
+<div role="region" aria-label="Parameter validation classes (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/luke/class/ActivityParameterValidatorClassDiagram.png" alt="Parameter validation classes" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/luke/class/ActivityParameterValidatorClassDiagram.png) | [PlantUML source](diagrams/luke/class/ActivityParameterValidatorClassDiagram.puml).
 
-![Parameter validation sequence](images/luke/sequence/ActivityParameterValidationSequence.png)
+<div role="region" aria-label="Parameter validation sequence (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/luke/sequence/ActivityParameterValidationSequence.png" alt="Parameter validation sequence" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/luke/sequence/ActivityParameterValidationSequence.png) | [PlantUML source](diagrams/luke/sequence/ActivityParameterValidationSequence.puml).
 
@@ -581,10 +744,10 @@ from the [name-character restrictions](#name-character-set-rationale).
 
 | Check | Rule |
 | --- | --- |
-| Duplicate | Same date, start, end and name, ignoring name case and surrounding spaces. Demand, ratings and completion do not affect identity. Always rejected. |
+| Duplicate | Same date, start, end and name, ignoring name case, surrounding spaces and repeated internal spaces. Demand, ratings and completion do not affect identity. Always rejected. |
 | Time overlap | Same-date ranges overlap when `candidate.start < existing.end` and `existing.start < candidate.end`. Touching endpoints are allowed. Completed activities still participate. |
 | `overlap/ALLOW` | Permits a time clash, but never a duplicate. It is not stored; supply it again for a conflicting schedule edit. |
-| When validation runs | Before adding an activity or replacing an eligible activity's name/schedule. Edits exclude the original record; demand/rating-only edits skip this check. |
+| When validation runs | Before add or edit. Edits exclude the original record. Duplicate checks always run; only actual date/time changes require fresh overlap approval. |
 
 For an existing activity from **09:00 to 10:00**, these examples use different
 names to isolate the time-overlap check:
@@ -602,11 +765,17 @@ add/edit validation rules still apply.
 
 <!-- @@author Atharva005 -->
 
-![Schedule validation classes](images/atharva/class/ActivityScheduleValidatorClassDiagram.png)
+<div role="region" aria-label="Schedule validation classes (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/atharva/class/ActivityScheduleValidatorClassDiagram.png" alt="Schedule validation classes" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/atharva/class/ActivityScheduleValidatorClassDiagram.png) | [PlantUML source](diagrams/atharva/class/ActivityScheduleValidatorClassDiagram.puml).
 
-![Schedule validation sequence](images/atharva/sequence/ActivityScheduleValidationSequence.png)
+<div role="region" aria-label="Schedule validation sequence (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/atharva/sequence/ActivityScheduleValidationSequence.png" alt="Schedule validation sequence" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/atharva/sequence/ActivityScheduleValidationSequence.png) | [PlantUML source](diagrams/atharva/sequence/ActivityScheduleValidationSequence.puml).
 
@@ -643,11 +812,17 @@ Separating loading from queries allows manager tests to supply small datasets.
 Unknown facilities, invalid filters and empty searches produce recoverable
 messages. See the [UG facility commands](UserGuide.md#listing-and-viewing-facilities-facility).
 
-![Facility loading and query classes](images/luke/class/FacilityClassDiagram.png)
+<div role="region" aria-label="Facility loading and query classes (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/luke/class/FacilityClassDiagram.png" alt="Facility loading and query classes" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/luke/class/FacilityClassDiagram.png) | [PlantUML source](diagrams/luke/class/FacilityClassDiagram.puml).
 
-![Facility search sequence](images/luke/sequence/FacilityLookupSequence.png)
+<div role="region" aria-label="Facility search sequence (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/luke/sequence/FacilityLookupSequence.png" alt="Facility search sequence" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/luke/sequence/FacilityLookupSequence.png) | [PlantUML source](diagrams/luke/sequence/FacilityLookupSequence.puml).
 
@@ -670,18 +845,25 @@ of accessibility. This graph shows recorded connectivity, not geographical layou
 
 <a id="connectivity-graph"></a>
 
-![Campus connectivity graph](images/luke/graph/fass-accessibility-network.svg)
+<div role="region" aria-label="Campus connectivity graph (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/luke/graph/fass-accessibility-network.svg" alt="Campus connectivity graph" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/luke/graph/fass-accessibility-network.svg) | [PlantUML source](diagrams/luke/graph/fass-accessibility-network.puml).
 
 #### Accessible route search
 
-`RouteParser` creates a `RouteCommand` for two hub names, matched ignoring case;
-facility IDs are not route endpoints. `ConnectionManager` keeps one reusable
+`RouteParser` resolves facility IDs through `FacilityManager` when available,
+then creates a `RouteCommand` for two hub names, matched ignoring case. Unknown
+endpoints report the valid graph hubs. `ConnectionManager` keeps one reusable
 `DijkstraShortestPath` graph with both directions of each `YES` connection.
 Each query creates a fresh `DijkstraSolver` with independent search state.
 
-![Routing classes](images/luke/class/RoutingClassDiagram.png)
+<div role="region" aria-label="Routing classes (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/luke/class/RoutingClassDiagram.png" alt="Routing classes" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/luke/class/RoutingClassDiagram.png) | [PlantUML source](diagrams/luke/class/RoutingClassDiagram.puml).
 
@@ -697,7 +879,10 @@ known disconnected endpoints produce the two-line no-route warning described in
 the [UG route section](UserGuide.md#finding-an-accessible-route-route). It means
 the local dataset has no eligible path, not that campus has no accessible route.
 
-![Shortest recorded accessible route](images/luke/sequence/RouteSearchSequence.png)
+<div role="region" aria-label="Shortest recorded accessible route (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/luke/sequence/RouteSearchSequence.png" alt="Shortest recorded accessible route" style="max-width: none;">
+</div>
 
 [Enlarge diagram](images/luke/sequence/RouteSearchSequence.png) | [PlantUML source](diagrams/luke/sequence/RouteSearchSequence.puml).
 
@@ -721,6 +906,11 @@ contracts and verification. When behavior changes, update the relevant guide and
 tests. Diagram sources and rendered images are indexed under
 [diagrams](diagrams/README.md) and [images](images/README.md). Regenerate an image
 when changing its PlantUML source and check that labels remain readable.
+
+Sequence lifelines use `objectName:ClassName` or `:ClassName` for instances.
+Participants marked `<<class>>` represent static calls rather than objects.
+Object snapshots underline instance labels and show concrete state and membership;
+they do not specify class inheritance or multiplicity constraints.
 
 ### Continuous integration
 
@@ -774,6 +964,7 @@ These tests check input validation at three levels:
 | Level | Tests | What they verify |
 | --- | --- | --- |
 | Individual validator | `ActivityNameValidatorTest` | The [name rules](#ascii-command-name-validation): allowed character boundaries, forbidden punctuation and blank names. |
+| Individual validator | `ActivityDateParserTest` | The `d/` values: date words, letter case, end-of-year rollover and rejected values, directly and through add and edit. |
 | Command parsing | Add/edit parser tests | Both parsers apply the shared rules and report the appropriate warning. |
 | Complete application | `UniEnableProcessTest` | Commands work through the real entry point, including input rejection, parameter and schedule checks, UTF-8 display of stored names, and persistence across restarts. |
 
@@ -799,11 +990,10 @@ For activity names, add and edit apply the shared
 | Input example | Validation and rationale |
 | --- | --- |
 | `n/学习`, `n/படி`, `n/पढ़ाई`, `n/చదువు`, `n/공부`, `n/勉強`, `n/Study 🎉`, `n/Café` | These foreign-language characters (Chinese, Tamil, Hindi, Telugu, Korean and Japanese), emoji and accented characters are outside printable ASCII.<br>Supporting more character sets requires broader testing of input handling and terminal display.<br>Restricting new names to printable ASCII keeps the supported input predictable and the validation scope manageable. See the [design rationale](#ascii-command-name-validation).<br>Existing Unicode names remain loadable under the separate [stored-name rules](#historical-name-compatibility). |
-| `n/Meeting, Week 3`, `n/Student's meeting` | Commas and apostrophes are forbidden. Rejecting unsupported punctuation before changes prevents partial updates and reduces ambiguous input; see the [name-character rationale](#name-character-set-rationale). |
 | `n/"Study"`, `n/Study\notes` | Double quotes and backslashes are forbidden; quoted names and escaping are unsupported. |
 | `n/Study\|Review` or a name containing a line break | Pipes and line breaks conflict with record boundaries. |
 | A blank name or one containing a tab, NUL or DEL | Names must be nonblank and contain only printable characters. |
-| `n/Planning and/or review` (accepted) | Ordinary slash text is allowed, subject to the [prefix rules](#activity-parameter-validation). |
+| `n/Planning and/or review` (rejected) | `and/` is not a supported prefix. Reword the name using spaces or hyphens; see the [prefix rules](#activity-parameter-validation). |
 
 Collection copies protect shared data from external changes. Assertions help
 detect internal ordering and deletion errors during debugging. Input validation
@@ -865,7 +1055,7 @@ Feature responsibility follows the table below. See the [team pages](team/README
 | Team member | Feature area | V1.0 work | V2.0 work | Diagram contribution |
 | --- | --- | --- | --- | --- |
 | [Lou Yu Luke](team/lukelouyu.md) | Ratings, shared validation and accessibility | Exit (`bye`); [facility listing, lookup, and feature search](#facility-lookup). | [Accessible routes](#accessible-route-search); [optional ratings](#optional-ratings-integration); [command/name validation](#ascii-command-name-validation); [duplicate/clash checks](#activity-schedule-validation). | [Activity-creation class diagram, name/parameter validation, facility lookup and routing](diagrams/README.md#luke): five class diagrams and four sequence diagrams. Additional diagrams: [architecture](diagrams/README.md#architecture) and [campus connectivity graph](diagrams/README.md#connectivity-graph). |
-| [Atharva Rege](team/atharva005.md) | Activity creation, calendar views and help | [Adding activities](#adding-activities) (`add`) and command help (`help`). | [Calendar dashboards](#calendar-dashboards) (`view today`, `view tomorrow`, `view week`); [topic help](#categorized-and-topic-help) (`help TOPIC`). | [Add sequence, calendar dashboards, topic help, and schedule validation](diagrams/README.md#atharva): seven diagrams (three class/sequence pairs plus the add sequence). |
+| [Atharva Rege](team/atharva005.md) | Activity creation, calendar views and help | [Adding activities](#adding-activities) (`add`) and command help (`help`). | [Calendar dashboards](#calendar-dashboards) (`view today`, `view tomorrow`, `view week`); [topic help](#categorized-and-topic-help) (`help TOPIC`); [date parsing](#date-parsing) (`d/today`, `d/tomorrow`). | [Add sequence, calendar dashboards, topic help, schedule validation, and date parsing](diagrams/README.md#atharva): ten diagrams (four class/sequence pairs, the add sequence and an activity-state object diagram). |
 | [Muhammad Asyraf Bin Abdul Rahim](team/officialasyrafrahim.md) | Activity views and deletion | [Chronological/demand listing and deletion](#activity-views-and-deletion) (`list`, `list demand`, `delete`). | [Priority, overdue, and next views](#activity-views-and-deletion) (`list priority`, `overdue`, `next`). | [Chronological listing, demand listing, deletion, priority, overdue, and next](diagrams/README.md#asyraf): six class/sequence pairs. |
 | [Koh Li Wei Oliver](team/oliver-koh.md) | Completion, storage, editing and search | [Persistence and recovery](#completion-and-persistence); completion changes (`mark`, `unmark`). | [Editing](#editing-activities) (`edit`); [Find Activities](#name-search) (`find`); failed-save retry on exit (`bye`). | [Editing, Find Activities, marking, unmarking, and persistence](diagrams/README.md#oliver): five class/sequence pairs. |
 
@@ -884,11 +1074,11 @@ Feature responsibility follows the table below. See the [team pages](team/README
 | US02 | Must-Have | student planning my routine | list all my activities in chronological order | I can review my commitments and anticipate what comes next | Implemented |
 | US03 | Must-Have | student with a long schedule | find activities by keyword | I can locate a specific commitment quickly | Implemented |
 | US04 | Must-Have | student whose plans change | delete an activity | obsolete commitments do not clutter my schedule | Implemented |
-| US05 | Must-Have | student whose details change | edit an existing activity's name, date, or time | I can correct my plan without deleting and re-adding it | Implemented |
+| US05 | Must-Have | student whose details change | edit an existing activity's name, date, or time | I can correct my plan without deleting and re-adding it | Partial: ended activities are locked against editing and rescheduling |
 | US06 | Must-Have | student who finds it difficult to track completion | mark and unmark an activity as done | I know what is finished and what remains | Implemented |
 | US07 | Nice-to-Have | student balancing responsibilities | assign a category (academic, CCA, daily) to an activity | I can distinguish types of commitments | Not implemented |
 | US08 | Nice-to-Have | student who finds timetable entry tedious | add a recurring activity by specifying its day, time, and week numbers | I do not re-enter the same class repeatedly | Not implemented |
-| US09 | Nice-to-Have | student whose day changes unexpectedly | reschedule an activity to a new date or time | my plan stays realistic when disruptions occur | Implemented |
+| US09 | Nice-to-Have | student whose day changes unexpectedly | reschedule an activity to a new date or time | my plan stays realistic when disruptions occur | Partial: ended activities are locked against editing and rescheduling |
 
 ### Views and reminders
 
@@ -941,7 +1131,7 @@ validation and persistence contracts.
 
 | Use case | Main success flow | Extensions |
 | --- | --- | --- |
-| Add an activity | User supplies fields; UniEnable validates, inserts, saves and confirms. | Invalid fields, a historical end, duplicates or an unapproved clash leave the list unchanged. A save failure keeps the change in memory and reports unsaved data. |
+| Add an activity | User supplies fields; UniEnable validates, inserts, saves and confirms. | Invalid fields, duplicates or an unapproved clash leave the list unchanged. A save failure keeps the change in memory and reports unsaved data. |
 | Edit an activity | User selects a canonical index and replacements; UniEnable validates the whole replacement, saves and confirms. | Invalid indexes and ended activities are rejected. Invalid replacements leave all fields unchanged. |
 | Find an accessible route | User supplies known, distinct hubs; UniEnable finds and displays the shortest eligible recorded path with a disclaimer. | Invalid endpoints warn. Known disconnected hubs produce a no-route result scoped to the dataset. |
 
@@ -982,7 +1172,7 @@ hardware, and procedure; this guide sets no timing benchmark.
 | Displayed index | A one-based position in chronological `list`, used by edit, delete, mark, and unmark and retained by demand, find, priority, overdue, and next. Calendar dashboards number their selected rows separately. |
 | Seven-day dashboard | `view week`: today through today plus six days, including completed activities and grouped by date. |
 | Hub | A supported facility name: AS1 to AS8 or CLB in the bundled dataset. |
-| Facility ID | A stable lookup identifier, F01 to F09. Route endpoints use hub names instead. |
+| Facility ID | A stable lookup identifier, F01 to F09. Route input accepts IDs when facility data is available, resolving them to hub names. |
 | Connection | A bidirectional recorded link with distance, accessibility, traversal type, shelter, and optional barrier information or notes. |
 | Accessibility status | A recorded `YES`, `NO`, or `UNKNOWN` value. A missing feature is distinct from an explicit `UNKNOWN`. |
 | Route | Ordered stops and their connecting segments, with total recorded distance. |
@@ -998,6 +1188,10 @@ Build with Java 25 using `check shadowJar`. Run the JAR from a separate folder
 so tests cannot change personal activity data. Use future dates for new activities
 and restart from the same folder to verify persistence.
 
+To test the released application, download `unienable.jar` from the
+[v2.1 release](https://github.com/AY2627S1-CS2113-T10-4/tp/releases/tag/v2.1)
+and run it in the separate test folder instead of using a local build.
+
 Copy `build/libs/unienable.jar` into an empty test folder, open a terminal there,
 and run `java -ea -jar unienable.jar`. Enter `help`, then `bye`: the menu and
 goodbye message should appear. Relaunch from that same folder for the scenarios
@@ -1011,8 +1205,8 @@ In a fresh test folder, enter the following commands one line at a time. The
 dates must be in the future; replace the example dates if necessary.
 
 ```text
-add n/Study d/2099-12-10 s/09:00 e/10:00 dem/LOW imp/3 urg/4 com/2
-add n/Consultation d/2099-12-11 s/11:00 e/12:00 dem/HIGH
+add n/Study d/2030-12-10 s/09:00 e/10:00 dem/LOW imp/3 urg/4 com/2
+add n/Consultation d/2030-12-11 s/11:00 e/12:00 dem/HIGH
 list
 list demand
 mark 1
@@ -1029,6 +1223,25 @@ file unchanged. Use a fresh folder for independent tests below.
 
 <!-- @@author lukelouyu -->
 
+#### Date shortcuts
+
+In a fresh test folder, before 22:30, enter:
+
+```text
+add n/Manasi's birthday party d/today s/19:00 e/22:30 dem/low imp/4 com/4 urg/2
+add n/TCM Field Trip at Thong Chai Hospital d/tomorrow s/14:00 e/17:00 dem/high imp/5 com/2 urg/3
+list
+edit 1 d/tomorrow
+add n/Past outing d/yesterday s/09:00 e/10:00
+list
+bye
+```
+
+The first `list` shows the party on today's date and the field trip on tomorrow's.
+The edit moves the party to tomorrow, so the second `list` shows the field trip
+first. `d/yesterday` produces an invalid-date warning. `data/activities.txt` must
+contain real dates, not the words `today` or `tomorrow`.
+
 #### Printable-ASCII input and historical UTF-8 output
 
 Exercise the [input-validation contract](#ascii-command-name-validation) in disposable
@@ -1039,7 +1252,7 @@ without partial changes and confirm the original activities after restart.
 Include a non-ASCII command word to check warning selection against the
 [UG error-handling examples](UserGuide.md#error-handling).
 
-Use accepted ASCII names such as `Planning and/or review` and `C++ @ COM1 #2` to
+Use accepted ASCII names such as `Planning review` and `C++ @ COM1 #2` to
 exercise add, edit, search, and restart. Exercise
 [stored-name compatibility](#historical-name-compatibility) with a pre-existing
 UTF-8 fixture, including an eligible edit that omits the name. `UniEnableProcessTest`
@@ -1051,10 +1264,10 @@ Use a fresh test folder. Enter these commands one at a time, keeping the dates
 in the future:
 
 ```text
-add n/Session d/2099-12-10 s/09:00 e/10:00
-add n/session d/2099-12-10 s/09:00 e/10:00 overlap/ALLOW
-add n/Practice d/2099-12-10 s/09:30 e/10:30
-add n/Practice d/2099-12-10 s/09:30 e/10:30 overlap/ALLOW
+add n/Session d/2030-12-10 s/09:00 e/10:00
+add n/session d/2030-12-10 s/09:00 e/10:00 overlap/ALLOW
+add n/Practice d/2030-12-10 s/09:30 e/10:30
+add n/Practice d/2030-12-10 s/09:30 e/10:30 overlap/ALLOW
 edit 2 s/09:45 e/10:45
 edit 2 s/09:45 e/10:45 overlap/ALLOW
 list
@@ -1077,8 +1290,8 @@ these records. The first date must be past and the other dates future:
 
 ```text
 Old|2000-01-01|09:00|10:00|LOW|false|1|5|1
-Future rated|2099-12-10|09:00|10:00|HIGH|false|3|4|2
-Future unrated|2099-12-11|11:00|12:00|LOW|false|-|-|-
+Future rated|2030-12-10|09:00|10:00|HIGH|false|3|4|2
+Future unrated|2030-12-11|11:00|12:00|LOW|false|-|-|-
 ```
 
 Start the app, then enter:
@@ -1094,7 +1307,7 @@ overdue
 unmark 1
 overdue
 edit 1 imp/5
-edit 1 d/2099-12-12
+edit 1 d/2030-12-12
 ```
 
 Priority order is indexes 2 (80), 1 (50), then 3 (`NA`). The first `next` selects
@@ -1103,8 +1316,12 @@ activities. `overdue` initially shows Old (1), becomes empty after `mark 1`, and
 shows Old again after `unmark 1`. Both edits are rejected because the original
 activity has ended, including the attempt to move it into the future.
 
-Historical records must be prepared while the app is closed; add/edit cannot
-create them. Ongoing activities appear in neither time query. To verify exact
+Neither `add` nor `edit` can create an ended activity. Once an activity has ended,
+`edit` cannot change its details or reschedule it. For this test, prepare the supplied
+data file while the app is closed so that completion states and ratings match
+the expected results.
+
+Ongoing activities appear in neither `overdue` nor `next`. To verify exact
 start/end boundaries without changing the computer clock, run from the project root:
 
 ```text
@@ -1122,8 +1339,8 @@ On macOS/Linux, replace `.\gradlew.bat` with `./gradlew`.
 Use a fresh test folder and close the app. Prepare `data/activities.txt` below,
 replacing `<TODAY>`, `<TOMORROW>`, `<DAY_6>` and `<DAY_7>` with actual dates in
 `YYYY-MM-DD` format: today, tomorrow, six days ahead and seven days ahead. Refresh
-the dates if the test crosses midnight. File preparation allows testing past
-times on the current date without bypassing add/edit restrictions.
+the dates if the test crosses midnight. File preparation gives this scenario
+reproducible dates, completion states and ratings.
 
 ```text
 Today|<TODAY>|09:00|10:00|HIGH|false|3|4|2
@@ -1147,8 +1364,8 @@ The daily views show Today and Tomorrow respectively. The week includes the firs
 three records and excludes Day seven: three activities, one completed and one
 HIGH-demand activity. Rating totals are importance 5, urgency 7 and commitment 6.
 Help displays the menu or requested topic without executing it or changing data.
-In a separate empty folder, the three view commands should show empty-period
-warnings without a summary or rating table.
+In a separate empty folder, the three view commands should show the period-specific no-activities
+message.
 
 Rating rows fit 80 terminal columns. Long table labels shorten to at most 26
 columns with `...`, while schedules retain full names. Dashboard numbers belong
@@ -1170,9 +1387,9 @@ macOS/Linux, replace `.\gradlew.bat` with `./gradlew`.
 In a fresh test folder, enter:
 
 ```text
-add n/Valid d/2099-12-10 s/09:00 e/10:00
+add n/Valid d/2030-12-10 s/09:00 e/10:00
 add n/Missing
-add n/Meeting, Week 3 d/2099-12-11 s/09:00 e/10:00
+add n/"Student meeting" d/2030-12-11 s/09:00 e/10:00
 edit 1 imp/1,5
 edit 1 n/Changed imp/0
 help add extra
@@ -1194,12 +1411,12 @@ session accepts another command after each rejection.
 Start in a fresh test folder with future dates and enter:
 
 ```text
-add n/Study d/2099-12-10 s/09:00 e/10:00 dem/LOW imp/3 urg/4 com/2
-add n/Consultation d/2099-12-11 s/11:00 e/12:00
+add n/Study d/2030-12-10 s/09:00 e/10:00 dem/LOW imp/3 urg/4 com/2
+add n/Consultation d/2030-12-11 s/11:00 e/12:00
 mark 1
 edit 1 n/Revision dem/HIGH
 find revision
-edit 1 d/2099-12-12 s/13:00 e/14:00
+edit 1 d/2030-12-12 s/13:00 e/14:00
 find revision
 edit 2 n/Should stay unchanged imp/0
 list
@@ -1212,7 +1429,8 @@ bye
 The first search shows completed Revision at index 1 with its ratings preserved.
 Rescheduling moves it after Consultation, so the second search uses index 2.
 The invalid rating rejects the entire subsequent edit; the name remains Revision.
-Both deletions leave an empty list and the last search has no matches. Restart
+Both deletions leave an empty list. The last search returns the
+`Sorry, no activity names match your search.` message. Restart
 from the same folder and run `list`: the empty state must persist. All edits in
 this scenario target an activity whose original end is still in the future.
 
@@ -1231,8 +1449,20 @@ this scenario target an activity whose original end is still in the future.
 | `route from/AS6 to/AS7` | AS6 -> AS1 -> AS4 -> AS7, 200 metres. |
 | `route from/AS6 to/AS6` | Same-endpoint warning. |
 
-Unknown hubs, invalid filters, and reversed route prefixes must warn. Responses
-must include the sample-data notice and leave the activity file unchanged.
+Successful accessibility results and confirmed no-route responses include the
+sample-data notice. Input warnings have no sample-data notice because no
+accessibility result was calculated. Check these rejected inputs separately:
+
+| Command | Expected warning | Sample-data notice |
+| --- | --- | --- |
+| `route from/UTown to/AS6` | Unknown connection startpoint, followed by route usage. | Absent |
+| `route from/ZZZ to/AS6` | Unknown connection startpoint, followed by route usage. | Absent |
+| `route to/AS7 from/AS6` | Invalid route command, followed by route usage. | Absent |
+| `route from/AS6 to/AS6` | Source and destination are the same. | Absent |
+| `facility find type/LIFT status/MAYBE` | Invalid facility status, supported statuses and usage. | Absent |
+
+After each rejection, the session must accept another command and the saved
+activity file must remain unchanged.
 
 <!-- @@author -->
 

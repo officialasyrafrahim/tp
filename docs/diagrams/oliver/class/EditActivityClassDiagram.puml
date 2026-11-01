@@ -1,4 +1,6 @@
-'@@author Oliver-koh
+/'
+// @@author Oliver-koh
+'/
 @startuml
 !pragma layout smetana
 title Activity editing collaborators
@@ -14,7 +16,7 @@ hide circle
 hide empty members
 
 abstract class Command {
-  +execute(...): CommandResult
+  {abstract} +execute(...): CommandResult
 }
 class Parser {
   +parse(input: String): Command
@@ -54,4 +56,6 @@ note bottom of EditCommand
   before changing the selected activity.
 end note
 @enduml
-'@@author
+/'
+// @@author
+'/

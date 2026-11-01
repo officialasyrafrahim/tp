@@ -27,7 +27,7 @@ public final class FacilityFeature {
     /**
      * Returns the type value recorded for this object.
      *
-     * @return feature category
+     * @return feature category.
      */
     public Type getType() {
         return type;
@@ -36,7 +36,7 @@ public final class FacilityFeature {
     /**
      * Returns the status value recorded for this object.
      *
-     * @return recorded accessibility status; UNKNOWN means unconfirmed
+     * @return recorded accessibility status; UNKNOWN means unconfirmed.
      */
     public AccessibilityStatus getStatus() {
         return status;
@@ -45,7 +45,7 @@ public final class FacilityFeature {
     /**
      * Returns the notes value recorded for this object.
      *
-     * @return optional notes, or null
+     * @return optional notes, or null.
      */
     public String getNotes() {
         return notes;

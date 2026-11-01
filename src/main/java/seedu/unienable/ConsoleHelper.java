@@ -26,6 +26,7 @@ final class ConsoleHelper {
     private static final String UNSAVED_NOTICE =
             "[WARNING] Unsaved activity changes. Fix the save error and enter 'bye' to retry saving and exit.";
     //@@author
+
     /**
      * Prevents instantiation of this stateless helper.
      */
@@ -39,7 +40,7 @@ final class ConsoleHelper {
      * reports the problem and keeps bootstrap commands available.
      *
      * @param ui user interface for dataset warnings and loading errors.
-     * @return parser with available reference data, or a fallback when facilities cannot load
+     * @return parser with available reference data, or a fallback when facilities cannot load.
      */
     static Parser createParser(Ui ui) {
         return createParser(ui, Clock.systemDefaultZone());
@@ -52,7 +53,7 @@ final class ConsoleHelper {
      *
      * @param ui user interface for dataset warnings and loading errors.
      * @param clock time source used by add/edit validation and date/time queries.
-     * @return parser with available reference data, or a fallback when facilities cannot load
+     * @return parser with available reference data, or a fallback when facilities cannot load.
      */
     static Parser createParser(Ui ui, Clock clock) {
         try {
@@ -88,7 +89,7 @@ final class ConsoleHelper {
      * @param parser parser that recognizes the user's command.
      * @param activities shared activity collection.
      * @param storage activity persistence service.
-     * @return true when the command requests exit; false after other commands or warnings
+     * @return true when the command requests exit; false after other commands or warnings.
      */
     static boolean processNextCommand(Ui ui, Parser parser, ActivityList activities, Storage storage) {
         try {
@@ -116,7 +117,9 @@ final class ConsoleHelper {
     }
 
     //@@author Oliver-koh
-    /** Keeps unsaved state visible after queries, warnings, and unsuccessful save retries. */
+    /**
+     * Keeps unsaved state visible after queries, warnings, and unsuccessful save retries.
+     */
     private static void showUnsavedNotice(Ui ui, Storage storage) {
         if (storage.hasUnsavedChanges()) {
             ui.showMessage(UNSAVED_NOTICE);

@@ -4,16 +4,13 @@ package seedu.unienable.command.activity;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-
 import seedu.unienable.command.common.Command;
 import seedu.unienable.command.common.CommandResult;
-
 import seedu.unienable.exception.UniEnableException;
 import seedu.unienable.model.Activity;
 import seedu.unienable.model.ActivityList;
 import seedu.unienable.model.enums.DemandLevel;
 import seedu.unienable.storage.Storage;
-
 
 /**
  * Adds a validated, initially incomplete activity to the current session's activity list.
@@ -21,7 +18,8 @@ import seedu.unienable.storage.Storage;
  */
 public class AddCommand extends Command {
     private final Activity activity;
-    private final boolean allowOverlap;
+    private final boolean isOverlapAllowed;
+
     /**
      * Creates a command that will insert one incomplete activity with optional ratings.
      *
@@ -51,11 +49,11 @@ public class AddCommand extends Command {
      * @param importance importance from 1 to 5, or null when unset.
      * @param urgency urgency from 1 to 5, or null when unset.
      * @param commitment commitment from 1 to 5, or null when unset.
-     * @param allowOverlap whether this command permits an intentional time overlap.
+     * @param isOverlapAllowed whether this command permits an intentional time overlap.
      */
     public AddCommand(String name, LocalDate date, LocalTime startTime, LocalTime endTime, DemandLevel demand,
-            Integer importance, Integer urgency, Integer commitment, boolean allowOverlap) {
-        this.allowOverlap = allowOverlap;
+            Integer importance, Integer urgency, Integer commitment, boolean isOverlapAllowed) {
+        this.isOverlapAllowed = isOverlapAllowed;
         this.activity = new Activity(name, date, startTime, endTime, demand, false,
                 importance, urgency, commitment);
     }
@@ -67,7 +65,7 @@ public class AddCommand extends Command {
      */
     @Override
     public CommandResult execute(ActivityList activities, Storage storage) throws UniEnableException {
-        ActivityScheduleValidator.validate(activity, activities, null, allowOverlap);
+        ActivityScheduleValidator.validate(activity, activities, null, isOverlapAllowed);
         activities.addActivity(activity);
         String message = "Added activity: " + activity.getName() + "\n"
                 + "Date: " + activity.getDate() + "\n"
@@ -78,10 +76,9 @@ public class AddCommand extends Command {
                 + "Urgency: " + formatRating(activity.getUrgency()) + "\n"
                 + "Commitment: " + formatRating(activity.getCommitment()) + "\n"
                 //@@author
-                + "Activities in this session: " + activities.getActivities().size();
+                + "Total activities: " + activities.getActivities().size();
         return new CommandResult(message, false, true);
     }
-
 
     /**
      * Displays an unset rating as a dash while preserving numeric values.
@@ -89,7 +86,5 @@ public class AddCommand extends Command {
     private static String formatRating(Integer rating) {
         return rating == null ? "-" : rating.toString();
     }
-
-
 }
 //@@author

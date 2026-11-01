@@ -1,4 +1,6 @@
-'@@author officialasyrafrahim
+/'
+// @@author officialasyrafrahim
+'/
 @startuml
 title Priority-ordered activity listing
 skinparam backgroundColor white
@@ -13,11 +15,11 @@ hide footbox
 
 actor "User" as User
 participant "ui:Ui" as UI
-participant "ConsoleHelper" as Console
+participant "ConsoleHelper" as Console <<class>>
 participant "parser:Parser" as Parser
 participant "listParser:ListDeleteCommandParser" as ListParser
 participant "activities:ActivityList" as Activities
-participant "ActivityListFormatter" as Formatter
+participant "ActivityListFormatter" as Formatter <<class>>
 
 Console -> UI : readLine()
 User -> UI : list priority
@@ -39,7 +41,7 @@ note right of Activities
 end note
 Activities --> Query : view
 Query -> Formatter : formatPriorityList(view, canonicalView)
-Formatter --> Query : formatted rows or empty-state warning
+Formatter --> Query : formatted rows or normal empty-state message
 Query --> Console : CommandResult(message, false)
 note over Console, UI
   didChangeActivities() is false: do not call Storage.save().
@@ -47,4 +49,6 @@ end note
 Console -> UI : showMessage(result.getMessage())
 UI --> User : result message
 @enduml
-'@@author
+/'
+// @@author
+'/

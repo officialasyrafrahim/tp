@@ -1,4 +1,6 @@
-'@@author Oliver-koh
+/'
+// @@author Oliver-koh
+'/
 @startuml
 title Validate and replace an activity
 skinparam backgroundColor white
@@ -13,10 +15,10 @@ hide footbox
 
 actor "User" as User
 participant "ui:Ui" as UI
-participant "ConsoleHelper" as Console
+participant "ConsoleHelper" as Console <<class>>
 participant "edit:EditCommand" as Edit
 participant "activities:ActivityList" as Activities
-participant "ActivityScheduleValidator" as Schedule
+participant "ActivityScheduleValidator" as Schedule <<class>>
 
 Console -> UI : readLine()
 User -> UI : edit 1 ...
@@ -38,12 +40,14 @@ else activity is eligible
     Invalid replacement values warn before mutation.
     The remaining path assumes valid values.
   end note
-  opt name or schedule field supplied
-    Edit -> Schedule : validate(...)
-    Schedule -> Activities : getCanonicalView()
-    Activities --> Schedule : chronological activities
-    Schedule --> Edit : valid or conflict warning
-  end
+  Edit -> Schedule : validate(...)
+  Schedule -> Activities : getCanonicalView()
+  Activities --> Schedule : chronological activities
+  Schedule --> Edit : valid or conflict warning
+  note right of Schedule
+    Always check duplicates.
+    Require overlap approval only when the schedule changes.
+  end note
   alt duplicate or unapproved time clash
     Edit --> Console : conflict warning
     Console -> UI : showMessage(warning)
@@ -59,4 +63,6 @@ else activity is eligible
   end
 end
 @enduml
-'@@author
+/'
+// @@author
+'/

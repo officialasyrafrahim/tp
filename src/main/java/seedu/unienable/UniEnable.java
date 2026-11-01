@@ -2,7 +2,6 @@ package seedu.unienable;
 
 import java.io.InputStream;
 import java.io.PrintStream;
-
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Clock;
@@ -16,13 +15,13 @@ import seedu.unienable.ui.Ui;
 /**
  * Runs the UniEnable console until bye or end of input.
  */
-public class UniEnable {
-
+public final class UniEnable {
     /**
      * Prevents construction of this application entry-point utility.
      */
     private UniEnable() {
     }
+
     //@@author Atharva005
     /**
      * Starts the application and loads saved activity and facility data.
@@ -79,5 +78,4 @@ public class UniEnable {
             }
         }
     }
-
 }

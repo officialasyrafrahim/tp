@@ -35,7 +35,7 @@ public final class ConnectionManager {
     /**
      * Returns all connections in their original dataset order.
      *
-     * @return immutable list of connections
+     * @return immutable list of connections.
      */
     public List<Connection> getConnections() {
         return connections;
@@ -48,8 +48,8 @@ public final class ConnectionManager {
      *
      * @param from origin facility name, such as AS2 (not a stable ID such as F02).
      * @param to destination facility name, such as CLB.
-     * @return ordered stops, original connections and total metres, or empty if disconnected
-     * @throws IllegalArgumentException if either name is null, blank or absent from the connections
+     * @return ordered stops, original connections and total meters, or empty if disconnected.
+     * @throws IllegalArgumentException if either name is null, blank or absent from the connections.
      */
     public Optional<DijkstraShortestPath.Route> findRoute(String from, String to) {
         return shortestPath.findRoute(from, to);
@@ -59,7 +59,7 @@ public final class ConnectionManager {
      * Finds a connection by its stable numeric ID.
      *
      * @param id connection ID.
-     * @return matching connection, or empty if not found
+     * @return matching connection, or empty if not found.
      */
     public Optional<Connection> findConnection(int id) {
         for (Connection connection : connections) {
@@ -81,8 +81,8 @@ public final class ConnectionManager {
      * @param type optional traversal type.
      * @param status optional accessibility status.
      * @param shelter optional shelter status.
-     * @return immutable matching connections in their original dataset order
-     * @throws IllegalArgumentException if all filters are omitted or an endpoint is blank
+     * @return immutable matching connections in their original dataset order.
+     * @throws IllegalArgumentException if all filters are omitted or an endpoint is blank.
      */
     public List<Connection> findConnections(String from, String to, TraversalType type,
             AccessibilityStatus status, ShelterStatus shelter) {

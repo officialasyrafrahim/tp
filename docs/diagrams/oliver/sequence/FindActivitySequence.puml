@@ -1,4 +1,6 @@
-'@@author Oliver-koh
+/'
+// @@author Oliver-koh
+'/
 @startuml
 title Find Activities - Sequence Diagram
 skinparam backgroundColor white
@@ -13,10 +15,10 @@ hide footbox
 
 actor "User" as User
 participant "ui:Ui" as UI
-participant "ConsoleHelper" as Console
+participant "ConsoleHelper" as Console <<class>>
 participant "parser:Parser" as Parser
 participant "activities:ActivityList" as Activities
-participant "ActivityListFormatter" as Formatter
+participant "ActivityListFormatter" as Formatter <<class>>
 
 Console -> UI : readLine()
 User -> UI : find Study
@@ -67,4 +69,6 @@ note over Console, UI
   does not call Storage.save(). Activity data is unchanged.
 end note
 @enduml
-'@@author
+/'
+// @@author
+'/

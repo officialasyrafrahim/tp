@@ -1,4 +1,6 @@
-'@@author Atharva005
+/'
+// @@author Atharva005
+'/
 @startuml
 title Validate an activity schedule before insertion or replacement
 skinparam backgroundColor white
@@ -13,9 +15,9 @@ hide footbox
 
 actor "User" as User
 participant "ui:Ui" as UI
-participant ConsoleHelper as Console
+participant "ConsoleHelper" as Console <<class>>
 participant "add:AddCommand" as Add
-participant ActivityScheduleValidator as Validator
+participant "ActivityScheduleValidator" as Validator <<class>>
 participant "activities:ActivityList" as Activities
 
 Console -> UI : readLine()
@@ -37,7 +39,7 @@ alt duplicate identity exists
   Console -> UI : showMessage(warning)
   UI --> User : warning
 else no duplicate
-  alt allowOverlap is true
+  alt isOverlapAllowed is true
     Validator --> Add : validation passed
   else same-date positive overlap exists
     note over Validator, Activities
@@ -75,4 +77,6 @@ note over Add, Validator
   Duplicate checks always apply.
 end note
 @enduml
-'@@author
+/'
+// @@author
+'/

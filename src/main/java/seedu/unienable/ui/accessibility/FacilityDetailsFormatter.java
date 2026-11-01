@@ -19,7 +19,7 @@ public final class FacilityDetailsFormatter {
      * Missing optional text is omitted and feature order is preserved.
      *
      * @param facility facility whose recorded details should be displayed.
-     * @return facility details without a heading or accessibility disclaimer
+     * @return facility details without a heading or accessibility disclaimer.
      */
     public static String format(Facility facility) {
         StringBuilder output = new StringBuilder();

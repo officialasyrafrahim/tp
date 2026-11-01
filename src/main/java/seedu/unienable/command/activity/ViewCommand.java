@@ -30,6 +30,13 @@ public class ViewCommand extends Command {
      */
     private static final int MAX_CHART_NAME_WIDTH = 26;
 
+    /**
+     * Marks a rating table name that was shortened to fit its column.
+     */
+    private static final String ELLIPSIS = "...";
+
+    private static final int DAYS_IN_WEEK = 7;
+
     private final Range range;
     private final Clock clock;
 
@@ -69,16 +76,19 @@ public class ViewCommand extends Command {
     public CommandResult execute(ActivityList activities, Storage storage) {
         LocalDate today = LocalDate.now(clock);
         LocalDate start = range == Range.TOMORROW ? today.plusDays(1) : today;
-        LocalDate end = range == Range.WEEK ? start.plusDays(6) : start;
+        LocalDate end = range == Range.WEEK ? start.plusDays(DAYS_IN_WEEK - 1) : start;
         List<Activity> view = activities.getViewBetween(start, end);
         LOGGER.fine(() -> "Displayed " + view.size() + " activities for " + range + ".");
         return new CommandResult(format(start, end, view), false);
     }
 
     /**
-     * Renders a warning for an empty range, or its schedule and aggregate sections when populated.
+     * Renders the normal no-activities message for an empty range, or the populated dashboard.
      */
     private String format(LocalDate start, LocalDate end, List<Activity> view) {
+        if (view.isEmpty()) {
+            return "Sorry, no activities fall within the selected period.";
+        }
         StringBuilder output = new StringBuilder();
         if (range == Range.WEEK) {
             output.append("WEEK - ").append(start.format(WEEK_FORMAT))
@@ -87,12 +97,8 @@ public class ViewCommand extends Command {
             output.append(range == Range.TODAY ? "TODAY - " : "TOMORROW - ")
                     .append(start.format(WEEK_FORMAT));
         }
-        if (view.isEmpty()) {
-            return output.append("\n\n[WARNING] No activities scheduled for ")
-                    .append(range == Range.WEEK ? "the next seven days." : "this day.").toString();
-        }
         if (range == Range.WEEK) {
-            for (int day = 0; day < 7; day++) {
+            for (int day = 0; day < DAYS_IN_WEEK; day++) {
                 appendDay(output, start.plusDays(day), view);
             }
         } else {
@@ -107,21 +113,27 @@ public class ViewCommand extends Command {
      * Adds one day's activities or an explicit empty-day message.
      */
     private static void appendDay(StringBuilder output, LocalDate date, List<Activity> view) {
-        List<Activity> daily = view.stream().filter(activity -> activity.getDate().equals(date)).toList();
+        List<Activity> dailyActivities = view.stream()
+                .filter(activity -> activity.getDate().equals(date)).toList();
         output.append("\n\n").append(date.format(DAY_FORMAT));
-        if (daily.isEmpty()) {
+        if (dailyActivities.isEmpty()) {
             output.append(" - No activities scheduled for this day.");
             return;
         }
-        int index = view.indexOf(daily.get(0)) + 1;
-        for (Activity activity : daily) {
-            output.append("\n").append(index++).append(". ").append(activity.getStartTime())
+        int index = view.indexOf(dailyActivities.get(0)) + 1;
+        int nameWidth = dailyActivities.stream()
+                .mapToInt(activity -> getDisplayWidth(activity.getName())).max().orElse(0);
+        int indexWidth = Integer.toString(index + dailyActivities.size() - 1).length();
+        for (Activity activity : dailyActivities) {
+            output.append("\n").append(String.format(Locale.ROOT, "%" + indexWidth + "d", index++))
+                    .append(". ").append(activity.getStartTime())
                     .append("-").append(activity.getEndTime()).append(" [")
-                    .append(activity.isDone() ? "X" : " ").append("] ").append(activity.getName())
-                    .append("    IMP ").append(rating(activity.getImportance()))
-                    .append("  URG ").append(rating(activity.getUrgency()))
-                    .append("  COM ").append(rating(activity.getCommitment()))
-                    .append("  DEM ").append(demandCode(activity.getDemand()));
+                    .append(activity.isDone() ? "X" : " ").append("] ")
+                    .append(padName(activity.getName(), nameWidth))
+                    .append("    IMP ").append(formatRating(activity.getImportance()))
+                    .append("  URG ").append(formatRating(activity.getUrgency()))
+                    .append("  COM ").append(formatRating(activity.getCommitment()))
+                    .append("  DEM ").append(getDemandCode(activity.getDemand()));
         }
     }
 
@@ -142,7 +154,7 @@ public class ViewCommand extends Command {
      */
     private static void appendRatingChart(StringBuilder output, List<Activity> view) {
         int nameWidth = Math.min(MAX_CHART_NAME_WIDTH, Math.max("Activity".length(),
-                view.stream().mapToInt(activity -> displayWidth(activity.getName())).max().orElse(0)));
+                view.stream().mapToInt(activity -> getDisplayWidth(activity.getName())).max().orElse(0)));
         String rowFormat = "| %s | %-5s | %-5s | %-5s | %-14s | %-6s |";
         String header = String.format(Locale.ENGLISH, rowFormat,
                 padName("Activity", nameWidth), "IMP", "URG", "COM", "PRIORITY SCORE", "DEMAND");
@@ -168,17 +180,19 @@ public class ViewCommand extends Command {
                 commitmentTotal += commitment;
             }
             switch (activity.getDemand()) {
-                case LOW -> low++;
-                case MEDIUM -> medium++;
-                case HIGH -> high++;
-                default -> throw new IllegalStateException("Unexpected demand level.");
+            case LOW -> low++;
+            case MEDIUM -> medium++;
+            case HIGH -> high++;
+            default -> throw new IllegalStateException("Unexpected demand level.");
             }
             Integer priorityScore = activity.getPriorityScore();
             String priority = priorityScore == null ? "N" : priorityScore.toString();
-            String demand = "#".repeat(demandCount(activity.getDemand())) + " " + demandCode(activity.getDemand());
+            String demand = "#".repeat(getDemandMarkCount(activity.getDemand()))
+                    + " " + getDemandCode(activity.getDemand());
             output.append("\n").append(String.format(Locale.ENGLISH, rowFormat,
-                    padName(chartName(activity.getName()), nameWidth),
-                    stars(importance), exclamations(urgency), commitmentMarks(commitment), priority, demand));
+                    padName(shortenName(activity.getName()), nameWidth),
+                    formatStars(importance), formatExclamations(urgency), formatCommitmentMarks(commitment),
+                    priority, demand));
         }
         output.append("\n\nRATING TOTALS\nIMP ").append(importanceTotal)
                 .append("\nURG ").append(urgencyTotal)
@@ -194,8 +208,8 @@ public class ViewCommand extends Command {
     /**
      * Shortens only the rating table label; the stored and scheduled name stays complete.
      */
-    private static String chartName(String name) {
-        if (displayWidth(name) <= MAX_CHART_NAME_WIDTH) {
+    private static String shortenName(String name) {
+        if (getDisplayWidth(name) <= MAX_CHART_NAME_WIDTH) {
             return name;
         }
         BreakIterator characters = BreakIterator.getCharacterInstance(Locale.ROOT);
@@ -204,45 +218,45 @@ public class ViewCommand extends Command {
         int start = characters.first();
         int boundary = start;
         for (int end = characters.next(); end != BreakIterator.DONE; start = end, end = characters.next()) {
-            int nextWidth = clusterWidth(name.substring(start, end));
-            if (width + nextWidth > MAX_CHART_NAME_WIDTH - 3) {
+            int nextWidth = getClusterWidth(name.substring(start, end));
+            if (width + nextWidth > MAX_CHART_NAME_WIDTH - ELLIPSIS.length()) {
                 break;
             }
             width += nextWidth;
             boundary = end;
         }
-        return name.substring(0, boundary) + "...";
+        return name.substring(0, boundary) + ELLIPSIS;
     }
 
-    /** Pads using terminal width rather than UTF-16 length so Unicode names align with ASCII headings. */
+    /**
+     * Pads using terminal width rather than UTF-16 length so Unicode names align with ASCII headings.
+     */
     private static String padName(String name, int width) {
-        return name + " ".repeat(width - displayWidth(name));
+        return name + " ".repeat(width - getDisplayWidth(name));
     }
 
-    /** Counts rendered columns by grapheme cluster, keeping combining marks and emoji sequences together. */
-    private static int displayWidth(String text) {
+    /**
+     * Counts rendered columns by grapheme cluster, keeping combining marks and emoji sequences together.
+     */
+    private static int getDisplayWidth(String text) {
         BreakIterator characters = BreakIterator.getCharacterInstance(Locale.ROOT);
         characters.setText(text);
         int width = 0;
         int start = characters.first();
         for (int end = characters.next(); end != BreakIterator.DONE; start = end, end = characters.next()) {
-            width += clusterWidth(text.substring(start, end));
+            width += getClusterWidth(text.substring(start, end));
         }
         return width;
     }
 
-    /** Treats East Asian wide characters and emoji as two columns, and combining marks as zero. */
-    private static int clusterWidth(String cluster) {
+    /**
+     * Treats East Asian wide characters and emoji as two columns, and combining marks as zero.
+     */
+    private static int getClusterWidth(String cluster) {
         int width = 0;
         for (int point : cluster.codePoints().toArray()) {
             int type = Character.getType(point);
-            if (point == 0xfe0f || point == 0x20e3 || point >= 0x1f1e6 && point <= 0x1faff
-                    || point >= 0x1100 && (point <= 0x115f || point == 0x2329 || point == 0x232a
-                    || point >= 0x2e80 && point <= 0xa4cf && point != 0x303f
-                    || point >= 0xac00 && point <= 0xd7a3 || point >= 0xf900 && point <= 0xfaff
-                    || point >= 0xfe10 && point <= 0xfe19 || point >= 0xfe30 && point <= 0xfe6f
-                    || point >= 0xff00 && point <= 0xff60 || point >= 0xffe0 && point <= 0xffe6
-                    || point >= 0x20000 && point <= 0x3fffd)) {
+            if (isDoubleWidth(point)) {
                 width = 2;
             } else if (type != Character.NON_SPACING_MARK && type != Character.COMBINING_SPACING_MARK
                     && type != Character.ENCLOSING_MARK && type != Character.FORMAT) {
@@ -252,35 +266,52 @@ public class ViewCommand extends Command {
         return width;
     }
 
-    private static int demandCount(DemandLevel demand) {
+    /**
+     * Returns whether a code point fills two terminal columns, such as East Asian wide characters.
+     */
+    private static boolean isDoubleWidth(int point) {
+        return point == 0xfe0f || point == 0x20e3 || point == 0x2329 || point == 0x232a
+                || isWithin(point, 0x1100, 0x115f) || isWithin(point, 0x1f1e6, 0x1faff)
+                || (isWithin(point, 0x2e80, 0xa4cf) && point != 0x303f)
+                || isWithin(point, 0xac00, 0xd7a3) || isWithin(point, 0xf900, 0xfaff)
+                || isWithin(point, 0xfe10, 0xfe19) || isWithin(point, 0xfe30, 0xfe6f)
+                || isWithin(point, 0xff00, 0xff60) || isWithin(point, 0xffe0, 0xffe6)
+                || isWithin(point, 0x20000, 0x3fffd);
+    }
+
+    private static boolean isWithin(int point, int first, int last) {
+        return point >= first && point <= last;
+    }
+
+    private static int getDemandMarkCount(DemandLevel demand) {
         return switch (demand) {
-            case LOW -> 1;
-            case MEDIUM -> 2;
-            case HIGH -> 3;
+        case LOW -> 1;
+        case MEDIUM -> 2;
+        case HIGH -> 3;
         };
     }
 
-    private static String demandCode(DemandLevel demand) {
+    private static String getDemandCode(DemandLevel demand) {
         return switch (demand) {
-            case LOW -> "L";
-            case MEDIUM -> "M";
-            case HIGH -> "H";
+        case LOW -> "L";
+        case MEDIUM -> "M";
+        case HIGH -> "H";
         };
     }
 
-    private static String rating(Integer value) {
+    private static String formatRating(Integer value) {
         return value == null ? "-" : value.toString();
     }
 
-    private static String stars(Integer value) {
+    private static String formatStars(Integer value) {
         return value == null ? "-" : "*".repeat(value);
     }
 
-    private static String exclamations(Integer value) {
+    private static String formatExclamations(Integer value) {
         return value == null ? "-" : "!".repeat(value);
     }
 
-    private static String commitmentMarks(Integer value) {
+    private static String formatCommitmentMarks(Integer value) {
         return value == null ? "-" : "+".repeat(value);
     }
 }

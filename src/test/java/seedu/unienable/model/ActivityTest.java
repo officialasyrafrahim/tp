@@ -18,7 +18,7 @@ import seedu.unienable.model.enums.DemandLevel;
  * Tests optional rating values, shared validation and compatibility with existing activity state.
  */
 class ActivityTest {
-    private static final LocalDate DATE = LocalDate.of(2020, 10, 20);
+    private static final LocalDate DATE = LocalDate.of(2026, 10, 20);
     private static final LocalTime START = LocalTime.of(9, 0);
     private static final LocalTime END = LocalTime.of(10, 0);
 

@@ -10,7 +10,6 @@ import java.time.format.ResolverStyle;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,34 +24,26 @@ import seedu.unienable.model.enums.DemandLevel;
  */
 public class AddCommandParser {
     private static final Pattern PREFIX = Pattern.compile("(?i)(?<!\\S)(overlap|dem|imp|urg|com|n|d|s|e)/");
-    private static final Pattern DATE_PATTERN = Pattern.compile("\\d{4}-\\d{2}-\\d{2}");
     private static final Pattern TIME_PATTERN = Pattern.compile("\\d{2}:\\d{2}");
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("uuuu-MM-dd")
-            .withResolverStyle(ResolverStyle.STRICT);
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm")
             .withResolverStyle(ResolverStyle.STRICT);
-    private static final String USAGE = "Usage: add n/NAME d/YYYY-MM-DD s/HH:mm e/HH:mm "
+    private static final String USAGE = "Usage: add n/NAME d/YYYY-MM-DD|today|tomorrow s/HH:mm e/HH:mm "
             + "[dem/LOW|MEDIUM|HIGH] [imp/IMP] [urg/URG] [com/COM] [overlap/ALLOW]";
 
-    /**
-     * Supplies the current time and local zone for activity end-time validation.
-     */
     private final Clock clock;
 
     /**
-     * Creates a parser using the system clock and local time zone.
+     * Creates a parser using the local system time.
      */
     public AddCommandParser() {
         this(Clock.systemDefaultZone());
     }
 
     /**
-     * Creates a parser with a supplied clock so tests can fix the current date and time.
-     *
-     * @param clock clock used to validate whether the activity has ended.
+     * Creates a parser with a shared clock for repeatable date/time validation.
      */
-    AddCommandParser(Clock clock) {
-        this.clock = Objects.requireNonNull(clock, "clock");
+    public AddCommandParser(Clock clock) {
+        this.clock = clock;
     }
 
     /**
@@ -64,22 +55,22 @@ public class AddCommandParser {
      */
     public AddCommand parse(String arguments) throws ParseException {
         if (arguments.contains("|") || arguments.indexOf('\n') >= 0 || arguments.indexOf('\r') >= 0) {
-            throw invalid("The activity name must not contain | or line breaks.");
+            throw createUsageError("The | character and line breaks are not allowed in command parameters.");
         }
         ActivityParameterValidator.validate(arguments);
         Map<String, String> fields = readFields(arguments);
         for (String required : new String[] {"n", "d", "s", "e"}) {
             if (!fields.containsKey(required)) {
-                throw invalid("Missing " + required + "/ parameter.");
+                throw createUsageError("Missing " + required + "/ parameter.");
             }
         }
 
         String name = fields.get("n");
         if (name.isBlank()) {
-            throw invalid("Empty n/ parameter.");
+            throw createUsageError("Empty n/ parameter.");
         }
         if (name.contains("|") || name.indexOf('\n') >= 0 || name.indexOf('\r') >= 0) {
-            throw invalid("The activity name must not contain | or line breaks.");
+            throw createUsageError("The activity name must not contain | or line breaks.");
         }
         ActivityNameValidator.validate(name);
 
@@ -87,27 +78,22 @@ public class AddCommandParser {
         LocalTime startTime;
         LocalTime endTime;
         try {
-            if (!DATE_PATTERN.matcher(fields.get("d")).matches()) {
-                throw new DateTimeParseException("Wrong date format", fields.get("d"), 0);
-            }
-            date = LocalDate.parse(fields.get("d"), DATE_FORMAT);
+            date = ActivityDateParser.parse(fields.get("d"), clock);
         } catch (DateTimeParseException exception) {
-            throw invalid("Invalid date. Use YYYY-MM-DD and a real calendar date.");
+            throw createUsageError(ActivityDateParser.INVALID_DATE_MESSAGE);
         }
         try {
             startTime = parseTime(fields.get("s"));
             endTime = parseTime(fields.get("e"));
         } catch (DateTimeParseException exception) {
-            throw invalid("Invalid time. Use 24-hour HH:mm (for example, 09:30).");
+            throw createUsageError("Invalid time. Use 24-hour HH:mm (for example, 09:30).");
         }
 
         if (!endTime.isAfter(startTime)) {
-            throw invalid("End time must be later than start time on the same day.");
+            throw createUsageError("End time must be later than start time on the same day.");
         }
-
-        LocalDateTime endDateTime = LocalDateTime.of(date, endTime);
-        if (!endDateTime.isAfter(LocalDateTime.now(clock))) {
-            throw invalid("End time must be later than current time.");
+        if (!LocalDateTime.of(date, endTime).isAfter(LocalDateTime.now(clock))) {
+            throw createUsageError("Activities that have ended cannot be added.");
         }
 
         DemandLevel demand = DemandLevel.MEDIUM;
@@ -115,7 +101,7 @@ public class AddCommandParser {
             try {
                 demand = DemandLevel.valueOf(fields.get("dem").toUpperCase(Locale.ROOT));
             } catch (IllegalArgumentException exception) {
-                throw invalid("Demand must be LOW, MEDIUM, or HIGH.");
+                throw createUsageError("Demand must be LOW, MEDIUM, or HIGH.");
             }
         }
         //@@author
@@ -131,11 +117,8 @@ public class AddCommandParser {
 
     /**
      * Collects prefix/value pairs while allowing whitespace inside the activity name.
-     * Only known prefixes (overlap, dem, imp, urg, com, n, d, s, e) delimit values; any other
-     * slash-containing text such as "and/or" or "w/o" is kept as value content,
-     * except likely misspellings rejected by the shared parameter validator.
-     * A known prefix like d/ that appears inside free text is still parsed as a
-     * prefix, an unavoidable ambiguity of prefix-based grammars.
+     * The shared validator first rejects unsupported slash tokens. Supported prefixes
+     * delimit values at whitespace boundaries; literal slashes in names are unsupported.
      */
     private Map<String, String> readFields(String arguments) throws ParseException {
         Map<String, String> fields = new HashMap<>();
@@ -146,7 +129,7 @@ public class AddCommandParser {
         while (matcher.find()) {
             if (previousKey == null) {
                 if (!arguments.substring(0, matcher.start()).isBlank()) {
-                    throw invalid("Unexpected text before the first parameter.");
+                    throw createUsageError("Unexpected text before the first parameter.");
                 }
             } else {
                 store(fields, previousKey, arguments.substring(previousValueStart, matcher.start()).trim());
@@ -155,7 +138,7 @@ public class AddCommandParser {
             previousValueStart = matcher.end();
         }
         if (previousKey == null) {
-            throw invalid("No add parameters supplied.");
+            throw createUsageError("No add parameters supplied.");
         }
         store(fields, previousKey, arguments.substring(previousValueStart).trim());
         return fields;
@@ -163,10 +146,10 @@ public class AddCommandParser {
 
     private void store(Map<String, String> fields, String key, String value) throws ParseException {
         if (value.isEmpty()) {
-            throw invalid("Empty " + key + "/ parameter.");
+            throw createUsageError("Empty " + key + "/ parameter.");
         }
         if (fields.putIfAbsent(key, value) != null) {
-            throw invalid("Duplicate " + key + "/ parameter.");
+            throw createUsageError("Duplicate " + key + "/ parameter.");
         }
     }
 
@@ -190,7 +173,7 @@ public class AddCommandParser {
             Activity.validateRating(rating);
             return rating;
         } catch (IllegalArgumentException exception) {
-            throw invalid("The " + prefix + "/ rating must be a whole number from 1 to 5.");
+            throw createUsageError("The " + prefix + "/ rating must be a whole number from 1 to 5.");
         }
     }
     //@@author
@@ -203,7 +186,7 @@ public class AddCommandParser {
         return LocalTime.parse(value, TIME_FORMAT);
     }
 
-    private ParseException invalid(String message) {
+    private ParseException createUsageError(String message) {
         return new ParseException("[WARNING] " + message + "\n" + USAGE);
     }
 }

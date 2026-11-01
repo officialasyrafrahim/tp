@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 import seedu.unienable.model.Activity;
+import seedu.unienable.model.ActivityList;
 
 //@@author officialasyrafrahim
 /**
@@ -26,23 +27,16 @@ public final class ActivityListFormatter {
 
     private static final String NEXT_HEADING = "Next activity (earliest upcoming):";
 
-    private static final String PRIORITY_INDEX_NOTICE =
-            "Indexes refer to the chronological 'list' order.";
-
     /**
      * Explains which chronological indexes activity-changing commands use.
      */
-    private static final String DEMAND_LIST_INDEX_NOTICE =
+    private static final String CHRONOLOGICAL_INDEX_NOTICE =
             "Indexes refer to the chronological 'list' order.";
 
     /**
-     * Warns that a requested activity view has no entries.
+     * Reports a normal empty result when an activity view has no entries.
      */
-    private static final String EMPTY_MESSAGE = "[WARNING] No activities yet.";
-
-    private static final String NO_OVERDUE_MESSAGE = "[WARNING] No overdue activities.";
-
-    private static final String NO_NEXT_MESSAGE = "[WARNING] No upcoming incomplete activities.";
+    private static final String EMPTY_MESSAGE = ActivityList.NO_ACTIVITIES_MESSAGE;
 
     private static final String UNKNOWN_RATING = "-";
 
@@ -59,7 +53,7 @@ public final class ActivityListFormatter {
      * {@code delete INDEX} resolves against.
      *
      * @param activities activities in chronological display order.
-     * @return the heading and numbered activities, or the empty-list placeholder
+     * @return the heading and numbered activities, or the empty-list placeholder.
      */
     public static String formatList(List<Activity> activities) {
         return format(LIST_HEADING, activities);
@@ -67,20 +61,20 @@ public final class ActivityListFormatter {
 
     /**
      * Formats the demand view with a notice explaining which indexes deletion uses.
-     * The notice appears before the activities or the empty-list placeholder.
+     * Empty results contain only the no-activities message.
      *
      * @param activities activities in demand display order.
      * @param canonicalView full chronological activity view.
-     * @return the heading, deletion-index notice and formatted activities
+     * @return the heading, deletion-index notice and formatted activities.
      */
     public static String formatDemandList(List<Activity> activities, List<Activity> canonicalView) {
-        StringBuilder output = new StringBuilder(DEMAND_LIST_HEADING)
-                .append("\n").append(DEMAND_LIST_INDEX_NOTICE);
         if (activities.isEmpty()) {
-            return output.append("\n").append(EMPTY_MESSAGE).toString();
+            return EMPTY_MESSAGE;
         }
+        StringBuilder output = new StringBuilder(DEMAND_LIST_HEADING)
+                .append("\n").append(CHRONOLOGICAL_INDEX_NOTICE);
         for (Activity activity : activities) {
-            output.append("\n").append(chronologicalIndex(activity, canonicalView)).append(". ")
+            output.append("\n").append(getChronologicalIndex(activity, canonicalView)).append(". ")
                     .append(describe(activity));
         }
         return output.toString();
@@ -92,16 +86,16 @@ public final class ActivityListFormatter {
      *
      * @param activities activities in priority display order.
      * @param canonicalView full chronological activity view.
-     * @return the heading, index notice, and numbered activities
+     * @return the heading, index notice, and numbered activities.
      */
     public static String formatPriorityList(List<Activity> activities, List<Activity> canonicalView) {
-        StringBuilder output = new StringBuilder(PRIORITY_LIST_HEADING)
-                .append("\n").append(PRIORITY_INDEX_NOTICE);
         if (activities.isEmpty()) {
-            return output.append("\n").append(EMPTY_MESSAGE).toString();
+            return EMPTY_MESSAGE;
         }
+        StringBuilder output = new StringBuilder(PRIORITY_LIST_HEADING)
+                .append("\n").append(CHRONOLOGICAL_INDEX_NOTICE);
         for (Activity activity : activities) {
-            output.append("\n").append(chronologicalIndex(activity, canonicalView)).append(". ")
+            output.append("\n").append(getChronologicalIndex(activity, canonicalView)).append(". ")
                     .append(describe(activity)).append(" | ").append(describePriority(activity));
         }
         return output.toString();
@@ -115,17 +109,17 @@ public final class ActivityListFormatter {
      * @param activities overdue activities in chronological order.
      * @param canonicalView full chronological activity view.
      * @param now local time used to classify the labels.
-     * @return the heading and numbered overdue activities
+     * @return the heading and numbered overdue activities.
      */
     public static String formatOverdueList(List<Activity> activities, List<Activity> canonicalView,
             LocalDateTime now) {
-        StringBuilder output = new StringBuilder(OVERDUE_LIST_HEADING);
         if (activities.isEmpty()) {
-            return output.append("\n").append(NO_OVERDUE_MESSAGE).toString();
+            return "Sorry, no incomplete activities have ended.";
         }
+        StringBuilder output = new StringBuilder(OVERDUE_LIST_HEADING);
         for (Activity activity : activities) {
-            output.append("\n").append(chronologicalIndex(activity, canonicalView)).append(". [")
-                    .append(overdueLabel(activity, now)).append("] ").append(describe(activity));
+            output.append("\n").append(getChronologicalIndex(activity, canonicalView)).append(". [")
+                    .append(getOverdueLabel(activity, now)).append("] ").append(describe(activity));
         }
         return output.toString();
     }
@@ -135,16 +129,15 @@ public final class ActivityListFormatter {
      *
      * @param next next activity, if one starts strictly after now.
      * @param canonicalView full chronological activity view.
-     * @return the heading and numbered next activity, or the empty-state message
+     * @return the heading and numbered next activity, or the empty-state message.
      */
     public static String formatNext(Optional<Activity> next, List<Activity> canonicalView) {
-        StringBuilder output = new StringBuilder(NEXT_HEADING);
         if (next.isEmpty()) {
-            return output.append("\n").append(NO_NEXT_MESSAGE).toString();
+            return "Sorry, no upcoming incomplete activities exist.";
         }
         Activity activity = next.get();
-        return output.append("\n").append(chronologicalIndex(activity, canonicalView)).append(". ")
-                .append(describe(activity)).toString();
+        return NEXT_HEADING + "\n" + getChronologicalIndex(activity, canonicalView) + ". "
+                + describe(activity);
     }
 
     private static String describePriority(Activity activity) {
@@ -160,7 +153,7 @@ public final class ActivityListFormatter {
         return rating == null ? UNKNOWN_RATING : rating.toString();
     }
 
-    private static String overdueLabel(Activity activity, LocalDateTime now) {
+    private static String getOverdueLabel(Activity activity, LocalDateTime now) {
         LocalDate today = now.toLocalDate();
         LocalDate activityDate = activity.getDate();
         if (activityDate.equals(today)) {
@@ -173,7 +166,7 @@ public final class ActivityListFormatter {
         return "OVERDUE EARLIER";
     }
 
-    private static int chronologicalIndex(Activity activity, List<Activity> canonicalView) {
+    private static int getChronologicalIndex(Activity activity, List<Activity> canonicalView) {
         int index = canonicalView.indexOf(activity);
         assert index >= 0 : "A formatted activity must belong to the canonical view.";
         return index + 1;
@@ -187,12 +180,12 @@ public final class ActivityListFormatter {
      * @param keyword searched name phrase.
      * @param matches matching activities in chronological order.
      * @param canonicalView full chronological activity view.
-     * @return formatted search result
+     * @return formatted search result.
      */
     public static String formatFindResults(String keyword, List<Activity> matches,
             List<Activity> canonicalView) {
         if (matches.isEmpty()) {
-            return "[WARNING] No activities matched keyword \"" + keyword + "\".";
+            return "Sorry, no activity names match your search.";
         }
         String activityLabel = matches.size() == 1 ? "activity" : "activities";
         StringBuilder output = new StringBuilder("Found ")
@@ -207,11 +200,10 @@ public final class ActivityListFormatter {
     //@@author officialasyrafrahim
 
     private static String format(String heading, List<Activity> activities) {
-        StringBuilder output = new StringBuilder(heading);
         if (activities.isEmpty()) {
-            output.append("\n").append(EMPTY_MESSAGE);
-            return output.toString();
+            return EMPTY_MESSAGE;
         }
+        StringBuilder output = new StringBuilder(heading);
         for (int i = 0; i < activities.size(); i++) {
             output.append("\n").append(i + 1).append(". ")
                     .append(describe(activities.get(i)));

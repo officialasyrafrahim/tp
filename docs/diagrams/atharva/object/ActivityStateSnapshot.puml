@@ -1,0 +1,46 @@
+/'
+// @@author Atharva005
+'/
+@startuml
+!pragma layout smetana
+title Illustrative activity state after adding two activities and marking one
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 14
+skinparam objectBackgroundColor #EDF3F8
+skinparam objectBorderColor #526477
+skinparam ArrowColor #526477
+object "<u>activities:ActivityList</u>" as Activities
+object "<u>study:Activity</u>" as Study {
+  name = "Study"
+  date = 2026-12-10
+  startTime = 09:00
+  endTime = 10:00
+  demand = LOW
+  isDone = true
+  importance = 3
+  urgency = 4
+  commitment = 2
+}
+object "<u>consultation:Activity</u>" as Consultation {
+  name = "Consultation"
+  date = 2026-12-11
+  startTime = 11:00
+  endTime = 12:00
+  demand = HIGH
+  isDone = false
+  importance = null
+  urgency = null
+  commitment = null
+}
+Activities -- Study
+Activities -- Consultation
+note bottom of Activities
+  Illustrative snapshot; backing collection omitted.
+  Links show membership, not display indexes.
+end note
+@enduml
+/'
+// @@author
+'/

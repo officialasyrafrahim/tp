@@ -1,4 +1,6 @@
-'@@author lukelouyu
+/'
+// @@author lukelouyu
+'/
 @startuml
 !pragma layout smetana
 title Activity creation and ratings
@@ -14,7 +16,7 @@ hide circle
 hide empty members
 
 abstract class Command {
-  +execute(...): CommandResult
+  {abstract} +execute(...): CommandResult
 }
 class AddCommandParser {
   -clock: Clock
@@ -28,6 +30,9 @@ class ActivityParameterValidator <<package-private>> {
 }
 class ActivityNameValidator <<package-private>> {
   {static} ~validate(name: String): void
+}
+class ActivityDateParser <<package-private>> {
+  {static} ~parse(value: String, clock: Clock): LocalDate
 }
 class ActivityScheduleValidator <<package-private>> {
   {static} ~validate(...): void
@@ -58,6 +63,7 @@ AddCommandParser ..> AddCommand : creates
 AddCommandParser ..> Activity : validates ratings
 AddCommandParser ..> ActivityNameValidator : requires printable-ASCII names
 AddCommandParser ..> ActivityParameterValidator : rejects likely prefix typos
+AddCommandParser ..> ActivityDateParser : resolves d/ value
 AddCommand ..> ActivityScheduleValidator : checks before insertion
 ActivityScheduleValidator ..> ActivityList : reads chronological view
 AddCommand --> Activity : activity
@@ -75,4 +81,6 @@ note bottom of ActivityScheduleValidator
   A warning prevents insertion and saving.
 end note
 @enduml
-'@@author
+/'
+// @@author
+'/

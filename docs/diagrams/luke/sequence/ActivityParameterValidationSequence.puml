@@ -1,4 +1,6 @@
-'@@author lukelouyu
+/'
+// @@author lukelouyu
+'/
 @startuml
 title Check activity parameters before creating a command
 skinparam backgroundColor white
@@ -13,10 +15,10 @@ hide footbox
 
 actor "User" as User
 participant "ui:Ui" as UI
-participant ConsoleHelper as Console
+participant "ConsoleHelper" as Console <<class>>
 participant "parser:Parser" as Parser
 participant "activityParser:AddCommandParser" as Fields
-participant ActivityParameterValidator as Validator
+participant "ActivityParameterValidator" as Validator <<class>>
 
 Console -> UI : readLine()
 User -> UI : add n/Class demm/HIGH ...
@@ -24,14 +26,13 @@ UI --> Console : input
 
 Console -> Parser : parse("add n/Class demm/HIGH ...")
 Parser -> Fields : parse(arguments)
-activate Fields
 Fields -> Validator : validate(arguments)
-activate Validator
-loop each alphanumeric prefix-like token
-  Validator -> Validator : skip known prefixes and single-letter tokens
+loop every slash token
+  Validator -> Validator : accept supported prefixes at whitespace boundaries
+  Validator -> Validator : reject unknown prefixes
   Validator -> Validator : isOneEditAway(token, prefix)
 end
-alt a likely typo exists (demm/ is one edit from dem/)
+alt an unsupported slash token exists
   Validator --> Fields : throws ParseException(warning)
   Fields --> Parser : propagate ParseException
   Parser --> Console : propagate ParseException
@@ -41,20 +42,20 @@ alt a likely typo exists (demm/ is one edit from dem/)
     No activity command executes.
     Nothing is added, edited, or saved.
   end note
-else no likely typo
+else every prefix is supported
   Validator --> Fields : validation passed
   Fields -> Fields : readFields(arguments), validate values
   Fields --> Parser : validated command
   Parser --> Console : command
   note over Console, Fields
     Normal command execution follows successful parsing.
-    Ordinary slash text such as and/or and w/o remains in the name.
+    Literal slash text in names is rejected, not retained as name content.
   end note
 end
-deactivate Validator
-deactivate Fields
 note over Fields, Validator
   EditCommandParser uses the same validation before reading edit fields.
 end note
 @enduml
-'@@author
+/'
+// @@author
+'/

@@ -1,4 +1,6 @@
-'@@author officialasyrafrahim
+/'
+// @@author officialasyrafrahim
+'/
 @startuml
 title Overdue activity query
 skinparam backgroundColor white
@@ -13,10 +15,10 @@ hide footbox
 
 actor "User" as User
 participant "ui:Ui" as UI
-participant "ConsoleHelper" as Console
+participant "ConsoleHelper" as Console <<class>>
 participant "parser:Parser" as Parser
 participant "activities:ActivityList" as Activities
-participant "ActivityListFormatter" as Formatter
+participant "ActivityListFormatter" as Formatter <<class>>
 
 Console -> UI : readLine()
 User -> UI : overdue
@@ -39,7 +41,7 @@ note right of Activities
 end note
 Activities --> Query : view
 Query -> Formatter : formatOverdueList(view, canonicalView, now)
-Formatter --> Query : formatted rows or empty-state warning
+Formatter --> Query : formatted rows or normal empty-state message
 Query --> Console : CommandResult(message, false)
 note over Console, UI
   didChangeActivities() is false: do not call Storage.save().
@@ -47,4 +49,6 @@ end note
 Console -> UI : showMessage(result.getMessage())
 UI --> User : result message
 @enduml
-'@@author
+/'
+// @@author
+'/

@@ -1,4 +1,6 @@
-'@@author lukelouyu
+/'
+// @@author lukelouyu
+'/
 @startuml
 title Validate a command word and supplied activity name
 skinparam backgroundColor white
@@ -13,10 +15,10 @@ hide footbox
 
 actor "User" as User
 participant "ui:Ui" as UI
-participant ConsoleHelper as Console
+participant "ConsoleHelper" as Console <<class>>
 participant "parser:Parser" as Parser
 participant "fields:AddCommandParser" as Fields
-participant ActivityNameValidator as Validator
+participant "ActivityNameValidator" as Validator <<class>>
 
 Console -> UI : readLine()
 User -> UI : add ...
@@ -74,4 +76,6 @@ note over Fields, Validator
   Historical Unicode names load from storage without this input validation.
 end note
 @enduml
-'@@author
+/'
+// @@author
+'/

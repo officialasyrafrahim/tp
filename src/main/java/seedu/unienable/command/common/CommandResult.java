@@ -53,7 +53,7 @@ public class CommandResult {
     /**
      * Indicates whether the command changed activity data and should be persisted.
      *
-     * @return true when activity data changed
+     * @return true when activity data changed.
      */
     public boolean didChangeActivities() {
         return didChangeActivities;

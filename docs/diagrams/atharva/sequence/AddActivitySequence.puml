@@ -1,4 +1,6 @@
-'@@author Atharva005
+/'
+// @@author Atharva005
+'/
 @startuml
 title Add an activity
 skinparam backgroundColor white
@@ -13,10 +15,10 @@ hide footbox
 
 actor "User" as User
 participant "ui:Ui" as UI
-participant "ConsoleHelper" as Console
+participant "ConsoleHelper" as Console <<class>>
 participant "parser:Parser" as Parser
 participant "activities:ActivityList" as Activities
-participant "ActivityScheduleValidator" as Schedule
+participant "ActivityScheduleValidator" as Schedule <<class>>
 
 Console -> UI : readLine()
 User -> UI : add ...
@@ -29,11 +31,12 @@ note right of Parser
   This path assumes valid command syntax and fields.
 end note
 create participant ":AddCommandParser" as AddParser
-Parser -> AddParser : AddCommandParser(clock)
+Parser -> AddParser : AddCommandParser()
 Parser -> AddParser : parse(arguments)
 activate AddParser
 note right of AddParser
-  Validate fields, name and future end.
+  Validate fields, name and same-day time range.
+  Reject an end at or before now; ended records cannot be added or edited.
   Apply defaults and optional ratings.
 end note
 create participant ":AddCommand" as Add
@@ -52,7 +55,6 @@ Parser --> Console : addCommand
 deactivate Parser
 
 Console -> Add : execute(activities, storage)
-activate Add
 Add -> Schedule : validate(...)
 Schedule -> Activities : getCanonicalView()
 Activities --> Schedule : chronological activities
@@ -73,11 +75,12 @@ else no duplicate and any overlap is approved
   result, activities, storage
 end ref
 end
-deactivate Add
 note over Console, Activities
   Only successful insertion reaches the shared save-and-display steps.
   A rejected add changes neither the count nor the stored file.
   See CompletionAndSaveSequence.
 end note
 @enduml
-'@@author
+/'
+// @@author
+'/

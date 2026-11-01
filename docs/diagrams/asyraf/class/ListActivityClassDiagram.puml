@@ -1,4 +1,6 @@
-'@@author officialasyrafrahim
+/'
+// @@author officialasyrafrahim
+'/
 @startuml
 !pragma layout smetana
 title Chronological activity listing
@@ -14,7 +16,7 @@ hide circle
 hide empty members
 
 abstract class Command {
-  +execute(...): CommandResult
+  {abstract} +execute(...): CommandResult
 }
 class Parser {
   +parse(input: String): Command
@@ -39,7 +41,7 @@ class CommandResult {
   +didChangeActivities(): boolean
 }
 Command <|-- ListCommand
-Parser ..> ListDeleteCommandParser : delegates list
+Parser *-- ListDeleteCommandParser : delegates list
 ListDeleteCommandParser ..> ListCommand : creates
 ListCommand ..> ActivityList : queries
 ListCommand ..> ActivityListFormatter : formats
@@ -48,11 +50,13 @@ ActivityList --> "0..*" Activity : activities
 note bottom of ActivityList
   Sort by date and start time; ties retain insertion order.
   Return a separate, unmodifiable view; keep backing order unchanged.
-  Include completed activities and show the empty-list warning when needed.
+  Include completed activities and show the normal empty-list message when needed.
 end note
 note bottom of CommandResult
   No activity changes or exit are requested.
   ConsoleHelper displays the message without saving.
 end note
 @enduml
-'@@author
+/'
+// @@author
+'/

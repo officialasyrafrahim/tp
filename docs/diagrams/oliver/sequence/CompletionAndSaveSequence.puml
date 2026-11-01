@@ -1,4 +1,6 @@
-'@@author Oliver-koh
+/'
+// @@author Oliver-koh
+'/
 @startuml
 title Save and display an executed command
 skinparam backgroundColor white
@@ -13,7 +15,7 @@ hide footbox
 
 actor "User" as User
 participant "ui:Ui" as UI
-participant "ConsoleHelper" as Console
+participant "ConsoleHelper" as Console <<class>>
 participant "storage:Storage" as Storage
 participant "activities:ActivityList" as Activities
 
@@ -54,4 +56,6 @@ else save succeeds or no write is required
   end
 end
 @enduml
-'@@author
+/'
+// @@author
+'/

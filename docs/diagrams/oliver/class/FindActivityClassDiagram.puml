@@ -1,4 +1,6 @@
-'@@author Oliver-koh
+/'
+// @@author Oliver-koh
+'/
 @startuml
 !pragma layout smetana
 title Find Activities - Class Diagram
@@ -14,7 +16,7 @@ hide circle
 hide empty members
 
 abstract class Command {
-  +execute(...): CommandResult
+  {abstract} +execute(...): CommandResult
 }
 class Parser {
   +parse(input: String): Command
@@ -60,11 +62,13 @@ note bottom of ActivityList
 end note
 note bottom of ActivityListFormatter
   Use indexes from the full chronological view.
-  Produce a warning when there are no matches.
+  Return the normal no-match message when there are no matches.
 end note
 note bottom of CommandResult
   Exit and activity-change flags are false.
   Searching never requests saving.
 end note
 @enduml
-'@@author
+/'
+// @@author
+'/

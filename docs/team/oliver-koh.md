@@ -6,17 +6,23 @@
 
 ### Overview
 
-UniEnable is a Java 25 command-line application that helps students plan dated activities and check recorded campus accessibility information. My contributions focus on keeping activity state persistent and allowing users to complete, revise, and find existing commitments.
+UniEnable is a Java 25 command-line application that helps university students, particularly those with ASD, ADHD, or mobility constraints, organize academic and daily commitments and check campus accessibility information. It combines dated activities, optional importance, urgency and commitment ratings, priority and calendar views, completion tracking, and automatic local saving with facility searches and shortest recorded accessible-route queries using sample data for nine NUS FASS campus hubs.
 
 ### Summary of contributions
+
+I implemented activity completion, file persistence and malformed-record recovery, partial editing, and name search. I connected activity changes to the console's save flow and contributed restart/command tests, storage and editing documentation, and UML diagrams.
 
 **Code contributed:** [My code and tests on the tP Code Dashboard](https://nus-cs2113-ay2627-s1.github.io/tp-dashboard/?search=&sort=groupTitle&sortWithin=title&timeframe=commit&mergegroup=&groupSelect=groupByRepos&breakdown=true&checkedFileTypes=docs%7Efunctional-code%7Etest-code%7Eother&since=2026-09-18T00%3A00%3A00&filteredFileName=&tabOpen=true&tabType=authorship&tabAuthor=Oliver-koh&tabRepo=AY2627S1-CS2113-T10-4%2Ftp%5Bmaster%5D&authorshipIsMergeGroup=false&authorshipFileTypes=functional-code%7Etest-code&authorshipIsBinaryFileTypeChecked=false&authorshipIsIgnoredFilesChecked=false)
 
 #### Enhancements implemented
 
-- **Completion tracking:** Implemented `mark` and `unmark` with chronological index resolution and completion state that survives restart ([PR #20](https://github.com/AY2627S1-CS2113-T10-4/tp/pull/20)). Commands preserve names, schedules, demand, and ratings. Repeating an already satisfied request produces a warning without unnecessarily saving the activity file.
-- **Persistence and recovery:** Developed activity storage and its console integration ([PR #20](https://github.com/AY2627S1-CS2113-T10-4/tp/pull/20)). The current flow supports UTF-8 records, legacy six-field records, independently unset ratings, and line-numbered warnings for malformed rows. Recovery saves preserve the original bytes before replacement, while failed saves keep changes visible in memory and retry saving on `bye` before exiting. This requires coordinating model changes, command-result flags, and file-write failures.
-- **Editing and name search:** Implemented `edit` and `find` ([PR #31](https://github.com/AY2627S1-CS2113-T10-4/tp/pull/31)). Edits replace only supplied fields, preserve completion and omitted ratings, and validate the resulting activity before replacement. Search matches a literal case-insensitive name substring and retains full-list chronological indexes. Rejected Unicode-whitespace names before saving to prevent records disappearing after restart ([PR #42](https://github.com/AY2627S1-CS2113-T10-4/tp/pull/42)).
+- **Completion tracking:** Implemented `mark` and `unmark` so students can track progress across sessions ([PR #20](https://github.com/AY2627S1-CS2113-T10-4/tp/pull/20)). Commands resolve chronological indexes and signal whether state actually changed. Repeating an already satisfied request warns without requesting another save, avoiding unnecessary file writes.
+- **Persistence and recovery:** UTF-8 activity storage and console integration preserve commitments across restart ([PR #20](https://github.com/AY2627S1-CS2113-T10-4/tp/pull/20)). Valid records load alongside line-numbered warnings for malformed or invalidly encoded rows. Saves retain optional ratings, read legacy records, and verify an original-file backup before recovery. Temporary-file replacement avoids partial writes; failed saves keep changes in memory and `bye` retries before exiting.
+- **Editing and name search:** Partial `edit` and literal, case-insensitive `find` let students revise and locate commitments without recreating them ([PR #31](https://github.com/AY2627S1-CS2113-T10-4/tp/pull/31)). For an activity that has not ended, a name-only edit preserves its schedule and completion state; invalid replacements leave it unchanged. Ended activities cannot be edited or rescheduled. Search retains full-list chronological indexes, and supplied names reject Unicode whitespace to keep saved records readable ([PR #42](https://github.com/AY2627S1-CS2113-T10-4/tp/pull/42)).
+
+#### Testing contributions
+
+Contributed storage, mark/unmark, and parser tests for restart persistence, malformed-row recovery, invalid indexes, and repeated completion requests ([PR #20](https://github.com/AY2627S1-CS2113-T10-4/tp/pull/20)). The [edit tests](https://github.com/AY2627S1-CS2113-T10-4/tp/blob/master/src/test/java/seedu/unienable/command/activity/EditCommandTest.java) and search tests cover partial updates, rejected changes, and chronological results ([PR #31](https://github.com/AY2627S1-CS2113-T10-4/tp/pull/31)).
 
 #### Documentation contributions
 
@@ -26,6 +32,6 @@ UniEnable is a Java 25 command-line application that helps students plan dated a
 
 #### Team-based tasks
 
-Integrated completion and persistence with the shared activity model, parser, and command-result contract so activity-changing commands can request saving consistently ([PR #20](https://github.com/AY2627S1-CS2113-T10-4/tp/pull/20)). Extended editing/search to preserve the team's optional ratings and existing completion state ([PR #31](https://github.com/AY2627S1-CS2113-T10-4/tp/pull/31)). Added storage, completion, parser, and edit/search tests to check restart behavior and ensure rejected changes do not partially update activities.
+Connected add, delete, and completion commands to the command-result flag that tells the console when to save ([PR #20](https://github.com/AY2627S1-CS2113-T10-4/tp/pull/20)). Integrated edit/search with the shared ratings model ([PR #31](https://github.com/AY2627S1-CS2113-T10-4/tp/pull/31)). Maintain the corresponding diagram assets ([PR #59](https://github.com/AY2627S1-CS2113-T10-4/tp/pull/59), [PR #70](https://github.com/AY2627S1-CS2113-T10-4/tp/pull/70)).
 
 <!-- @@author -->

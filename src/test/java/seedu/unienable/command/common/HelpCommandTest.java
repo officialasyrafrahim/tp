@@ -1,5 +1,6 @@
 //@@author lukelouyu
 package seedu.unienable.command.common;
+
 //@@author
 //@@author Atharva005
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -33,6 +34,14 @@ class HelpCommandTest {
     };
 
     @Test
+    void execute_nextHelp_describesTheNormalEmptyResult() throws Exception {
+        String message = parser.parse("help next").execute(new ActivityList(), noWrites).getMessage();
+        assertTrue(message.contains("Sorry, no upcoming incomplete activities exist."), message);
+        assertTrue(message.contains("normal no-activities message"), message);
+        assertFalse(message.contains("Shows a warning when none qualifies"), message);
+    }
+
+    @Test
     void execute_overview_groupsCommandsAndExplainsTopicNavigation() {
         CommandResult result = new HelpCommand().execute(new ActivityList(), noWrites);
         String message = result.getMessage();
@@ -60,9 +69,10 @@ class HelpCommandTest {
     @TestFactory
     Stream<DynamicTest> execute_topics_showUsageRulesAndExamplesWithoutReferenceData() {
         String[][] cases = {
-            {"add", "add n/NAME d/YYYY-MM-DD s/HH:mm e/HH:mm", "Names use printable ASCII only",
-                "add n/Study d/2030-12-01 s/10:00 e/11:00"},
-            {"edit", "edit INDEX [n/NAME]", "Replacement names use printable ASCII only",
+            {"add", "add n/NAME d/YYYY-MM-DD|today|tomorrow s/HH:mm e/HH:mm", "Names use printable ASCII only",
+                "add n/Study d/2030-12-01 s/10:00 e/11:00", "d/today and d/tomorrow use this computer's date",
+                "add n/Study d/tomorrow s/10:00 e/11:00"},
+            {"edit", "edit INDEX [n/NAME] [d/YYYY-MM-DD|today|tomorrow]", "Replacement names use printable ASCII only",
                 "edit 1 n/Project meeting dem/HIGH"},
             {"find", "find KEYWORD", "literal substring", "find project meeting"},
             {"list", "list priority", "list demand groups HIGH, MEDIUM, then LOW", "list demand"},
@@ -93,11 +103,26 @@ class HelpCommandTest {
             assertTrue(message.endsWith("Type help to return to the command menu."));
             assertFalse(message.contains("[WARNING]"), message);
             assertFalse(message.contains("%s"), message);
+            if (List.of("edit", "find", "list", "view", "overdue", "next", "mark", "unmark", "delete")
+                    .contains(scenario[0])) {
+                assertTrue(message.contains("Sorry,"), message);
+            }
             assertFalse(result.isExit());
             assertFalse(result.didChangeActivities());
             assertTrue(activities.getActivities().isEmpty());
         }));
     }
+
+    //@@author lukelouyu
+    @Test
+    void execute_addTopic_saysEndedActivitiesCannotBeAddedOrEdited() throws Exception {
+        String message = parser.parse("help add").execute(new ActivityList(), noWrites).getMessage();
+
+        assertTrue(message.contains("ended activities cannot be added."), message);
+        assertTrue(message.contains("Once an activity ends, it cannot be edited or rescheduled."), message);
+        assertFalse(message.contains("Ended activities can be added"), message);
+    }
+    //@@author Atharva005
 
     @Test
     void removedSaveCommand_isAbsentFromHelpAndParser() {
@@ -120,7 +145,7 @@ class HelpCommandTest {
     void execute_routeHelp_matchesSupportedEndpoints() throws Exception {
         String route = parser.parse("help route").execute(new ActivityList(), noWrites).getMessage();
         assertTrue(route.contains("facility names (AS1-AS8 or CLB)"), route);
-        assertTrue(route.contains("Facility IDs such as F01 are not accepted"), route);
+        assertTrue(route.contains("Facility IDs F01-F09 are also accepted"), route);
         assertFalse(route.contains("facility IDs or names"), route);
     }
 

@@ -1,4 +1,6 @@
-'@@author lukelouyu
+/'
+// @@author lukelouyu
+'/
 @startuml
 !pragma layout smetana
 title Command and printable-ASCII activity name validation
@@ -53,8 +55,10 @@ note bottom of ActivityNameValidator
   Whitespace-only names receive the empty-name warning.
   Parsers keep blank-name and delimiter checks.
   Historical Unicode names still load and save as UTF-8.
-  Reject backslashes, commas and both quotation marks in the extracted name.
+  Allow commas and apostrophes; reject backslashes and double quotation marks.
   Slash is allowed subject to prefix rules; no escape or quote syntax exists.
 end note
 @enduml
-'@@author
+/'
+// @@author
+'/

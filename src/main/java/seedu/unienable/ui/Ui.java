@@ -31,7 +31,7 @@ public class Ui {
     /**
      * Checks whether another line is available, waiting for input when necessary.
      *
-     * @return true if another command line can be read, or false at end of input
+     * @return true if another command line can be read, or false at end of input.
      */
     public boolean hasNextLine() {
         return input.hasNextLine();
@@ -40,8 +40,8 @@ public class Ui {
     /**
      * Reads the next command line without its line separator.
      *
-     * @return the next input line
-     * @throws java.util.NoSuchElementException if the input has ended
+     * @return the next input line.
+     * @throws java.util.NoSuchElementException if the input has ended.
      */
     public String readLine() {
         return input.nextLine();
@@ -50,7 +50,7 @@ public class Ui {
     /**
      * Returns UniEnable's ASCII wordmark.
      *
-     * @return multiline logo without a trailing line break
+     * @return multiline logo without a trailing line break.
      */
     public static String getLogo() {
         return " _   _       _ _____                o      o   \n"

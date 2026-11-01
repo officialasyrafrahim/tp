@@ -1,5 +1,6 @@
 //@@author lukelouyu
 package seedu.unienable.command.accessibility.connection.logic;
+
 //@@author
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -131,5 +132,6 @@ class ConnectionManagerTest {
                 new String[]{"SHELTER_CONFLICT", "AS1", "AS2", "PATH", "YES", "NO", ""},
                 new String[]{"SAME", "AS2", "AS2", "", "", "", ""},
                 new String[]{"SECOND", "AS3", "AS2", "RAMP", "UNKNOWN", "NO", "2"});
-    }}
+    }
+}
 //@@author

@@ -29,40 +29,69 @@ class ActivityScheduleValidatorTest {
     @Test
     void explicitOverride_allowsConcurrentActivitiesButNeverDuplicates() throws Exception {
         ActivityList activities = new ActivityList();
-        execute(activities, "add n/Lecture d/2099-12-01 s/09:00 e/10:00");
-        execute(activities, "add n/Reminder d/2099-12-01 s/09:30 e/10:30 overlap/ALLOW");
+        execute(activities, "add n/Lecture d/2030-12-01 s/09:00 e/10:00");
+        execute(activities, "add n/Reminder d/2030-12-01 s/09:30 e/10:30 overlap/ALLOW");
         assertEquals(2, activities.getActivities().size());
         assertThrows(UniEnableException.class, () -> execute(activities,
-                "add n/Lecture d/2099-12-01 s/09:00 e/10:00 overlap/ALLOW"));
+                "add n/Lecture d/2030-12-01 s/09:00 e/10:00 overlap/ALLOW"));
         execute(activities, "edit 2 s/09:15 overlap/allow");
         assertEquals(LocalTime.parse("09:15"), activities.getByDisplayedIndex(2).getStartTime());
         assertThrows(UniEnableException.class, () -> execute(activities, "edit 2 s/09:20"));
         execute(activities, "mark 1");
-        execute(activities, "add n/Concurrent d/2099-12-01 s/09:45 e/10:15 overlap/ALLOW");
+        execute(activities, "add n/Concurrent d/2030-12-01 s/09:45 e/10:15 overlap/ALLOW");
         assertEquals(3, activities.getActivities().size());
     }
 
     @Test
     void invalidOrUnaccompaniedOverride_isRejectedBeforeMutation() {
         assertThrows(UniEnableException.class,
-                () -> parser.parse("add n/Study d/2099-12-01 s/09:00 e/10:00 overlap/YES"));
+                () -> parser.parse("add n/Study d/2030-12-01 s/09:00 e/10:00 overlap/YES"));
         assertThrows(UniEnableException.class, () -> parser.parse("edit 1 overlap/ALLOW"));
         assertThrows(UniEnableException.class, () -> parser.parse("edit 1 n/Study overlap/NO"));
     }
 
     @Test
+    void nameOnlyEdit_preservesApprovedOverlapButRejectsDuplicates() throws Exception {
+        ActivityList activities = new ActivityList();
+        execute(activities, "add n/Lecture d/2030-12-01 s/10:00 e/12:00");
+        execute(activities, "add n/Reminder d/2030-12-01 s/11:00 e/11:15 overlap/ALLOW");
+        execute(activities, "edit 2 n/Reminder call Prof Tan");
+        execute(activities, "edit 2 s/11:00");
+        assertEquals("Reminder call Prof Tan", activities.getByDisplayedIndex(2).getName());
+        Activity original = activities.getByDisplayedIndex(2);
+        assertThrows(UniEnableException.class, () -> execute(activities, "edit 2 s/11:05"));
+        assertSame(original, activities.getByDisplayedIndex(2));
+        execute(activities, "add n/Other d/2030-12-01 s/11:00 e/11:15 overlap/ALLOW");
+        assertThrows(UniEnableException.class, () -> execute(activities, "edit 2 n/Other"));
+        assertSame(original, activities.getByDisplayedIndex(2));
+    }
+
+    @Test
     void duplicateIgnoresNameCaseDemandRatingsAndCompletion() throws Exception {
         ActivityList activities = new ActivityList();
-        execute(activities, "add n/Study d/2099-12-01 s/10:00 e/11:00");
+        execute(activities, "add n/Study d/2030-12-01 s/10:00 e/11:00");
         execute(activities, "mark 1");
         Activity original = activities.getActivities().getFirst();
 
         UniEnableException error = assertThrows(UniEnableException.class, () -> execute(activities,
-                "add n/study d/2099-12-01 s/10:00 e/11:00 dem/HIGH imp/5 urg/4 com/3"));
+                "add n/study d/2030-12-01 s/10:00 e/11:00 dem/HIGH imp/5 urg/4 com/3"));
 
         assertTrue(error.getMessage().startsWith("[WARNING] Duplicate activity already recorded at index 1:"));
         assertEquals(List.of(original), activities.getActivities());
         assertTrue(original.isDone());
+    }
+
+    @Test
+    void repeatedInternalSpaces_cannotBypassDuplicateChecksWithOverlapApproval() throws Exception {
+        ActivityList activities = new ActivityList();
+        execute(activities, "add n/Study group d/2030-12-01 s/10:00 e/11:00");
+        UniEnableException error = assertThrows(UniEnableException.class, () -> execute(activities,
+                "add n/STUDY  group d/2030-12-01 s/10:00 e/11:00 overlap/ALLOW"));
+        assertTrue(error.getMessage().contains("Duplicate activity"));
+        assertEquals("Study group", activities.getByDisplayedIndex(1).getName());
+        execute(activities, "add n/Other d/2030-12-01 s/10:00 e/11:00 overlap/ALLOW");
+        assertThrows(UniEnableException.class, () -> execute(activities, "edit 2 n/Study   group"));
+        assertEquals("Other", activities.getByDisplayedIndex(2).getName());
     }
 
     @Test
@@ -73,7 +102,7 @@ class ActivityScheduleValidatorTest {
             List<Activity> original = activities.getActivities();
 
             UniEnableException error = assertThrows(UniEnableException.class,
-                    () -> execute(activities, "add n/Other d/2099-12-01 " + range), range);
+                    () -> execute(activities, "add n/Other d/2030-12-01 " + range), range);
 
             assertTrue(error.getMessage().startsWith("[WARNING] Activity clashes with index 1:"), range);
             assertEquals(original, activities.getActivities(), range);
@@ -82,8 +111,8 @@ class ActivityScheduleValidatorTest {
 
     @Test
     void adjacentTimesAndDifferentDatesAreAllowed() throws Exception {
-        for (String schedule : List.of("d/2099-12-01 s/09:00 e/10:00", "d/2099-12-01 s/11:00 e/12:00",
-                "d/2099-12-02 s/10:00 e/11:00")) {
+        for (String schedule : List.of("d/2030-12-01 s/09:00 e/10:00", "d/2030-12-01 s/11:00 e/12:00",
+                "d/2030-12-02 s/10:00 e/11:00")) {
             ActivityList activities = new ActivityList(List.of(activity("Study", "10:00", "11:00")));
             execute(activities, "add n/Study " + schedule);
             assertEquals(2, activities.getActivities().size(), schedule);
@@ -93,8 +122,8 @@ class ActivityScheduleValidatorTest {
     @Test
     void conflictingEditsPreserveEveryFieldAndIgnoreOnlyTheirOwnActivity() throws Exception {
         ActivityList activities = new ActivityList();
-        execute(activities, "add n/Study d/2099-12-01 s/10:00 e/11:00");
-        execute(activities, "add n/Meeting d/2099-12-01 s/12:00 e/13:00 imp/2");
+        execute(activities, "add n/Study d/2030-12-01 s/10:00 e/11:00");
+        execute(activities, "add n/Meeting d/2030-12-01 s/12:00 e/13:00 imp/2");
         execute(activities, "mark 2");
         Activity original = activities.getByDisplayedIndex(2);
 
@@ -122,9 +151,9 @@ class ActivityScheduleValidatorTest {
         ActivityList activities = new ActivityList(List.of(activity("Later", "14:00", "15:00"), earlier));
 
         UniEnableException error = assertThrows(UniEnableException.class,
-                () -> execute(activities, "add n/Other d/2099-12-01 s/10:30 e/11:30"));
+                () -> execute(activities, "add n/Other d/2030-12-01 s/10:30 e/11:30"));
 
-        assertEquals("[WARNING] Activity clashes with index 1: Earlier (2099-12-01, 10:00-11:00)."
+        assertEquals("[WARNING] Activity clashes with index 1: Earlier (2030-12-01, 10:00-11:00)."
                 + " Add overlap/ALLOW to keep this intentional overlap.",
                 error.getMessage());
         assertEquals(2, activities.getActivities().size());
@@ -148,7 +177,7 @@ class ActivityScheduleValidatorTest {
                 activity("Study", "10:00", "11:00")));
 
         UniEnableException error = assertThrows(UniEnableException.class,
-                () -> execute(activities, "add n/STUDY d/2099-12-01 s/10:00 e/11:00"));
+                () -> execute(activities, "add n/STUDY d/2030-12-01 s/10:00 e/11:00"));
 
         assertTrue(error.getMessage().startsWith("[WARNING] Duplicate activity already recorded at index 2:"));
     }
@@ -164,7 +193,7 @@ class ActivityScheduleValidatorTest {
      * Creates a stored activity without invoking new-input schedule validation.
      */
     private static Activity activity(String name, String start, String end) {
-        return new Activity(name, LocalDate.of(2099, 12, 1), LocalTime.parse(start), LocalTime.parse(end),
+        return new Activity(name, LocalDate.of(2030, 12, 1), LocalTime.parse(start), LocalTime.parse(end),
                 DemandLevel.MEDIUM, false);
     }
 }

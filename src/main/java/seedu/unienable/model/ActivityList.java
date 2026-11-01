@@ -15,10 +15,13 @@ import seedu.unienable.exception.InvalidIndexException;
  * Owns activity collection state without exposing its mutable backing list.
  * The backing list stays in insertion (add) order; the display orderings used by
  * {@code list}, {@code list demand}, {@code list priority}, {@code overdue}, and
- * {@code next} are applied on demand by the view methods, so Branch 1's append
- * contract is untouched.
+ * {@code next} are applied on demand by the view methods, so adding an activity
+ * never reorders the stored list.
  */
 public class ActivityList {
+    /** Shared feedback when an activity command has no records or matching results. */
+    public static final String NO_ACTIVITIES_MESSAGE = "Sorry, the activity list is empty.";
+
     //@@author officialasyrafrahim
     /**
      * Canonical {@code list} order: date, then start time; stable ties keep add order.
@@ -62,11 +65,10 @@ public class ActivityList {
 
     //@@author Atharva005
     /**
-     * Appends without ordering; the views apply display order, so Branch 1's
-     * append contract is untouched.
+     * Appends without ordering; the view methods apply display order on demand.
      *
      * @param activity non-null activity to append.
-     * @throws NullPointerException if the activity is null
+     * @throws NullPointerException if the activity is null.
      */
     public void addActivity(Activity activity) {
         activities.add(Objects.requireNonNull(activity));
@@ -112,7 +114,7 @@ public class ActivityList {
      * full list shown by {@code list}.
      *
      * @param keyword case-insensitive name substring.
-     * @return matching activities in chronological order
+     * @return matching activities in chronological order.
      */
     public List<Activity> findByName(String keyword) {
         String normalizedKeyword = Objects.requireNonNull(keyword).strip().toLowerCase(Locale.ROOT);
@@ -142,7 +144,7 @@ public class ActivityList {
      * whose ratings are incomplete last. Ties keep canonical order, and completed
      * activities remain included as specified by the revised V2.0 guide.
      *
-     * @return immutable priority view
+     * @return immutable priority view.
      */
     public List<Activity> getPriorityView() {
         List<Activity> view = activities.stream().sorted(PRIORITY_ORDER).toList();
@@ -158,7 +160,7 @@ public class ActivityList {
      * local time. The result keeps canonical order for stable chronological ties.
      *
      * @param now local date and time used for the strict end boundary.
-     * @return immutable overdue view
+     * @return immutable overdue view.
      */
     public List<Activity> getOverdueView(LocalDateTime now) {
         Objects.requireNonNull(now);
@@ -178,7 +180,7 @@ public class ActivityList {
      * supplied local time. Canonical order decides ties between equal starts.
      *
      * @param now local date and time used for the strict start boundary.
-     * @return the next activity, or empty when none starts later
+     * @return the next activity, or empty when none starts later.
      */
     public Optional<Activity> getNext(LocalDateTime now) {
         Objects.requireNonNull(now);
@@ -198,23 +200,16 @@ public class ActivityList {
      * {@code list}, never to insertion order.
      *
      * @param displayedIndex 1-based index shown by the chronological {@code list} command.
-     * @return the removed activity
+     * @return the removed activity.
      * @throws InvalidIndexException when there are no activities, or when the index
-     *         is outside the range 1 to (number of activities)
+     *         is outside the range 1 to (number of activities).
      */
     public Activity deleteByDisplayedIndex(int displayedIndex) throws InvalidIndexException {
-        List<Activity> canonical = getCanonicalView();
-        if (canonical.isEmpty()) {
-            throw new InvalidIndexException("[WARNING] There are no activities to delete.");
-        }
-        if (displayedIndex < 1 || displayedIndex > canonical.size()) {
-            throw new InvalidIndexException("[WARNING] No activity at index " + displayedIndex
-                    + ". Valid range: 1 to " + canonical.size() + ".");
-        }
-        Activity removed = canonical.get(displayedIndex - 1);
-        boolean removedFromBackingList = activities.remove(removed);
-        assert removedFromBackingList : "The selected displayed activity must belong to the backing list.";
-        assert activities.size() == canonical.size() - 1 : "Deleting one activity must reduce the list size by one.";
+        Activity removed = getByDisplayedIndex(displayedIndex);
+        int expectedSize = activities.size() - 1;
+        boolean wasRemoved = activities.remove(removed);
+        assert wasRemoved : "The selected displayed activity must belong to the backing list.";
+        assert activities.size() == expectedSize : "Deleting one activity must reduce the list size by one.";
         return removed;
     }
     //@@author
@@ -224,19 +219,39 @@ public class ActivityList {
      * Resolves a user-visible one-based index against the canonical chronological view.
      *
      * @param displayedIndex index shown by the chronological list command.
-     * @return the activity at that index
-     * @throws InvalidIndexException when the index is outside the current canonical view
+     * @return the activity at that index.
+     * @throws InvalidIndexException when the index is outside the current canonical view.
      */
     public Activity getByDisplayedIndex(int displayedIndex) throws InvalidIndexException {
         List<Activity> canonical = getCanonicalView();
         if (canonical.isEmpty()) {
-            throw new InvalidIndexException("[WARNING] There are no activities to update.");
+            if (displayedIndex < 1) {
+                throw new InvalidIndexException("[WARNING] Index must be a positive whole number.");
+            }
+            throw new InvalidIndexException(NO_ACTIVITIES_MESSAGE);
         }
         if (displayedIndex < 1 || displayedIndex > canonical.size()) {
             throw new InvalidIndexException("[WARNING] No activity at index " + displayedIndex
-                    + ". Valid range: 1 to " + canonical.size() + ".");
+                    + ". " + describeValidIndexes(canonical.size()));
         }
         return canonical.get(displayedIndex - 1);
+    }
+    //@@author
+
+    //@@author lukelouyu
+    /**
+     * Describes which indexes the user may enter, replacing the awkward range
+     * "1 to 1" with a plain sentence when only one activity exists.
+     *
+     * @param activityCount number of activities in the list; at least one.
+     * @return sentence appended to the invalid-index warning.
+     */
+    private static String describeValidIndexes(int activityCount) {
+        assert activityCount >= 1 : "An empty list has its own warning and no valid indexes.";
+        if (activityCount == 1) {
+            return "There is only one item.";
+        }
+        return "Valid range: 1 to " + activityCount + ".";
     }
     //@@author
 
@@ -247,7 +262,7 @@ public class ActivityList {
      *
      * @param displayedIndex index shown by the chronological list command.
      * @param replacement replacement activity.
-     * @throws InvalidIndexException when the index is outside the current view
+     * @throws InvalidIndexException when the index is outside the current view.
      */
     public void replaceByDisplayedIndex(int displayedIndex, Activity replacement)
             throws InvalidIndexException {
@@ -263,17 +278,17 @@ public class ActivityList {
      * Updates completion state using the same canonical displayed index as list and delete.
      *
      * @param displayedIndex index shown by the chronological list command.
-     * @param done desired completion state.
-     * @return true when the activity state changed, false when it already had that state
-     * @throws InvalidIndexException when the index is outside the current canonical view
+     * @param isDone desired completion state.
+     * @return true when the activity state changed, false when it already had that state.
+     * @throws InvalidIndexException when the index is outside the current canonical view.
      */
-    public boolean setDoneAtDisplayedIndex(int displayedIndex, boolean done)
+    public boolean setDoneAtDisplayedIndex(int displayedIndex, boolean isDone)
             throws InvalidIndexException {
         Activity activity = getByDisplayedIndex(displayedIndex);
-        if (activity.isDone() == done) {
+        if (activity.isDone() == isDone) {
             return false;
         }
-        activity.setDone(done);
+        activity.setDone(isDone);
         return true;
     }
     //@@author
@@ -294,7 +309,7 @@ public class ActivityList {
      *
      * @param view activities to check.
      * @param order comparator defining the required order.
-     * @return true if every adjacent pair is in comparator order
+     * @return true if every adjacent pair is in comparator order.
      */
     private static boolean isSorted(List<Activity> view, Comparator<Activity> order) {
         for (int index = 1; index < view.size(); index++) {

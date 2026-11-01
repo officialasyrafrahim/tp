@@ -1,4 +1,6 @@
-'@@author Oliver-koh
+/'
+// @@author Oliver-koh
+'/
 @startuml
 title Mark an activity as completed
 skinparam backgroundColor white
@@ -13,7 +15,7 @@ hide footbox
 
 actor "User" as User
 participant "ui:Ui" as UI
-participant "ConsoleHelper" as Console
+participant "ConsoleHelper" as Console <<class>>
 participant "command:MarkCommand" as Query
 participant "activities:ActivityList" as Activities
 participant "activity:Activity" as Activity
@@ -52,4 +54,6 @@ note over Console, UI
   Invalid indexes are reported without changing or saving data.
 end note
 @enduml
-'@@author
+/'
+// @@author
+'/

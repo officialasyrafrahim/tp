@@ -12,23 +12,25 @@ graph uses `luke/graph/`; it is separate from the class and sequence diagrams.
 
 | Folder | Responsibility |
 | --- | --- |
-| [atharva](#atharva) | Atharva Rege — add sequence, calendar dashboards, help, and schedule validation diagrams. |
+| [atharva](#atharva) | Atharva Rege — add sequence, calendar dashboards, help, schedule validation, and date parsing diagrams. |
 | [asyraf](#asyraf) | Muhammad Asyraf Bin Abdul Rahim — chronological/demand listing, deletion, priority, overdue and next. |
 | [oliver](#oliver) | Koh Li Wei Oliver — completion, storage/recovery, editing and search. |
 | [luke](#luke) | Lou Yu Luke — activity-creation class diagram, name/parameter validation, architecture, optional add ratings, accessibility and exit. |
 
 The activity-creation class diagram, name and parameter validation pairs,
 architecture diagram, and shared validation helper are documented alongside the
-corresponding implementation. The add sequence, calendar dashboards, help, and
-schedule validation pair are documented in their respective sections. Exit has
-no separate diagram.
+corresponding implementation. The add sequence, calendar dashboards, help,
+schedule validation pair, and date parsing pair are documented in their
+respective sections. Exit has no separate diagram.
 
-Owned PlantUML sources use single-quote author comments. Their image links and
+Owned PlantUML sources enclose RepoSense author markers in PlantUML block comments. Their image links and
 Developer Guide embeds sit inside the corresponding Markdown author scopes.
 Imported PNG files retain the original archive images. New and updated diagrams
 are rendered from the corresponding PlantUML sources.
 
 <!-- @@author Atharva005 -->
+
+<a id="atharva"></a>
 
 ## Atharva Rege
 
@@ -36,6 +38,7 @@ are rendered from the corresponding PlantUML sources.
 
 | Source | Rendered image | Developer Guide section |
 | --- | --- | --- |
+| [ActivityDateParserClassDiagram.puml](atharva/class/ActivityDateParserClassDiagram.puml) | [PNG](../images/atharva/class/ActivityDateParserClassDiagram.png) | [Date parsing](../DeveloperGuide.md#date-parsing) |
 | [ActivityScheduleValidatorClassDiagram.puml](atharva/class/ActivityScheduleValidatorClassDiagram.puml) | [PNG](../images/atharva/class/ActivityScheduleValidatorClassDiagram.png) | [Activity schedule validation](../DeveloperGuide.md#activity-schedule-validation) |
 | [CalendarViewClassDiagram.puml](atharva/class/CalendarViewClassDiagram.puml) | [PNG](../images/atharva/class/CalendarViewClassDiagram.png) | [Calendar dashboards](../DeveloperGuide.md#calendar-dashboards) |
 | [TopicHelpClassDiagram.puml](atharva/class/TopicHelpClassDiagram.puml) | [PNG](../images/atharva/class/TopicHelpClassDiagram.png) | [Categorized and topic help](../DeveloperGuide.md#categorized-and-topic-help) |
@@ -45,13 +48,27 @@ are rendered from the corresponding PlantUML sources.
 | Source | Rendered image | Developer Guide section |
 | --- | --- | --- |
 | [AddActivitySequence.puml](atharva/sequence/AddActivitySequence.puml) | [PNG](../images/atharva/sequence/AddActivitySequence.png) | [Adding activities](../DeveloperGuide.md#adding-activities) |
+| [ActivityDateParsingSequence.puml](atharva/sequence/ActivityDateParsingSequence.puml) | [PNG](../images/atharva/sequence/ActivityDateParsingSequence.png) | [Date parsing](../DeveloperGuide.md#date-parsing) |
 | [ActivityScheduleValidationSequence.puml](atharva/sequence/ActivityScheduleValidationSequence.puml) | [PNG](../images/atharva/sequence/ActivityScheduleValidationSequence.png) | [Activity schedule validation](../DeveloperGuide.md#activity-schedule-validation) |
 | [CalendarViewSequence.puml](atharva/sequence/CalendarViewSequence.puml) | [PNG](../images/atharva/sequence/CalendarViewSequence.png) | [Calendar dashboards](../DeveloperGuide.md#calendar-dashboards) |
 | [TopicHelpSequence.puml](atharva/sequence/TopicHelpSequence.puml) | [PNG](../images/atharva/sequence/TopicHelpSequence.png) | [Categorized and topic help](../DeveloperGuide.md#categorized-and-topic-help) |
 
+
+### Object diagram
+
+- [ActivityStateSnapshot.puml](atharva/object/ActivityStateSnapshot.puml) | [PNG](../images/atharva/object/ActivityStateSnapshot.png) | [Activity state snapshot](../DeveloperGuide.md#activity-state-snapshot)
+
+The snapshot source and image use matching `atharva/object/` folders. Regenerate it with Java 25:
+
+```text
+java -jar "PATH_TO_PLANTUML_JAR" -charset UTF-8 -tpng -o ../../../images/atharva/object docs/diagrams/atharva/object/ActivityStateSnapshot.puml
+```
+
 <!-- @@author -->
 
 <!-- @@author officialasyrafrahim -->
+
+<a id="asyraf"></a>
 
 ## Muhammad Asyraf Bin Abdul Rahim
 
@@ -108,6 +125,8 @@ are rendered from the corresponding PlantUML sources.
 <!-- @@author -->
 
 <!-- @@author lukelouyu -->
+
+<a id="luke"></a>
 
 ## Lou Yu Luke
 

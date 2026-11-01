@@ -36,7 +36,7 @@ class EditCommandParserTest {
 
     @Test
     void parse_printableAsciiReplacement_acceptsSpacesAndPunctuation() throws Exception {
-        for (String name : new String[] {"CS2113 Tutorial", "Planning and/or review", "Lunch w/o friends",
+        for (String name : new String[] {"CS2113 Tutorial", "Planning review", "Lunch without friends",
             "Group-2 (Lab)!", "C++ @ COM1 #2"}) {
             assertInstanceOf(EditCommand.class, parser.parse("edit 1 n/" + name));
         }
@@ -47,8 +47,16 @@ class EditCommandParserTest {
         for (String name : new String[] {"A|B", "A\nB", "A\rB"}) {
             ParseException exception = assertThrows(ParseException.class, () -> parser.parse("edit 1 n/" + name));
             assertTrue(exception.getMessage().startsWith(
-                    "[WARNING] The activity name must not contain | or line breaks.\nUsage: edit"));
+                    "[WARNING] The | character and line breaks are not allowed in command parameters.\nUsage: edit"));
         }
+    }
+
+    @Test
+    void parse_delimiterInRating_reportsGeneralParameterWarning() {
+        ParseException exception = assertThrows(ParseException.class,
+                () -> parser.parse("edit 1 imp/1|2"));
+        assertTrue(exception.getMessage().startsWith(
+                "[WARNING] The | character and line breaks are not allowed in command parameters."));
     }
 
     @Test
@@ -58,6 +66,13 @@ class EditCommandParserTest {
         ParseException exception = assertThrows(ParseException.class,
                 () -> parser.parse("edit 1 n/Class dem1/HIGH imp/5"));
         assertEquals("[WARNING] Unknown parameter 'dem1/'. Did you mean 'dem/'?", exception.getMessage());
+    }
+
+    @Test
+    void parse_unsupportedLongRatingPrefix_rejectsWholeEdit() {
+        ParseException exception = assertThrows(ParseException.class,
+                () -> parser.parse("edit 1 n/Updated urgency/5"));
+        assertEquals("[WARNING] Unknown parameter 'urgency/'. Did you mean 'urg/'?", exception.getMessage());
     }
 
     @Test
@@ -75,7 +90,7 @@ class EditCommandParserTest {
     @Test
     void parse_acceptsFieldsInAnyOrder() throws Exception {
         assertInstanceOf(EditCommand.class,
-                parser.parse("edit 1 dem/HIGH e/15:00 n/Updated d/2099-01-03 s/14:00"));
+                parser.parse("edit 1 dem/HIGH e/15:00 n/Updated d/2030-01-03 s/14:00"));
         assertInstanceOf(EditCommand.class, parser.parse("edit\t1\tn/Updated"));
     }
 
@@ -83,7 +98,7 @@ class EditCommandParserTest {
     Stream<DynamicTest> parse_malformedFields_warnWithUsage() {
         String[] arguments = {
             "-1 n/Updated", "2147483648 n/Updated", "1 n/", "1 unexpected n/Updated",
-            "1 d/2099-2-03", "1 d/2099-02-29", "1 s/9:00", "1 e/24:00",
+            "1 d/2030-2-03", "1 d/2030-02-29", "1 s/9:00", "1 e/24:00",
             "1 dem/EXTREME", "1 imp/0", "1 urg/6", "1 com/5.0"
         };
         return Stream.of(arguments).map(input -> DynamicTest.dynamicTest("edit " + input, () -> {

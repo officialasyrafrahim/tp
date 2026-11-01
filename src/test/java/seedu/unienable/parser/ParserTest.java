@@ -19,12 +19,12 @@ class ParserTest {
     @Test
     void forbiddenNamePunctuation_keepsNameWarning() {
         for (String name : List.of("\"Discuss notes\"", "\"Unclosed", "A\"B", "Trailing\"",
-                "O'Brien", "'Meeting'", "A,B", "A\\B", "A/\\B", "A\\/B")) {
-            for (String input : List.of("add n/" + name + " d/2099-12-10 s/09:00 e/10:00",
+                "A\\B")) {
+            for (String input : List.of("add n/" + name + " d/2030-12-10 s/09:00 e/10:00",
                     "edit 1 n/" + name + " imp/5")) {
                 ParseException exception = assertThrows(ParseException.class, () -> parser.parse(input));
-                assertEquals("[WARNING] Activity names must not contain backslashes (\\), commas (,),"
-                        + " or quotation marks (' or \"). Slash (/) is allowed; /\\ and \\/ are not.",
+                assertEquals("[WARNING] Activity names must not contain backslashes (\\)"
+                        + " or double quotation marks.",
                         exception.getMessage());
             }
         }
@@ -35,12 +35,12 @@ class ParserTest {
         String[][] cases = {{"imp/1,5", "imp/ rating must be a whole number"},
             {"urg/'3'", "urg/ rating must be a whole number"},
             {"com/3\\4", "com/ rating must be a whole number"},
-            {"d/'2099-12-10'", "Invalid date"}, {"s/\"09:00\"", "Invalid time"}};
+            {"d/'2030-12-10'", "Invalid date"}, {"s/\"09:00\"", "Invalid time"}};
         for (String[] scenario : cases) {
-            String base = "n/Meeting d/2099-12-10 s/09:00 e/10:00";
+            String base = "n/Meeting d/2030-12-10 s/09:00 e/10:00";
             String prefix = scenario[0].substring(0, scenario[0].indexOf('/'));
             if (prefix.equals("d")) {
-                base = base.replace("d/2099-12-10", scenario[0]);
+                base = base.replace("d/2030-12-10", scenario[0]);
             } else if (prefix.equals("s")) {
                 base = base.replace("s/09:00", scenario[0]);
             } else {
@@ -67,13 +67,34 @@ class ParserTest {
     void unknownAsciiAndBlankCommands_keepUnrecognizedWarning() {
         for (String input : List.of("bogus", "", " \t ")) {
             ParseException error = assertThrows(ParseException.class, () -> parser.parse(input), input);
-            assertEquals("[WARNING] Unrecognized command. Type bye to exit.", error.getMessage(), input);
+            assertEquals("[WARNING] Unrecognized command. Type help to see available commands.",
+                    error.getMessage(), input);
+        }
+    }
+
+    @Test
+    void byeWithArguments_explainsTheRecognizedCommandSyntax() {
+        ParseException error = assertThrows(ParseException.class, () -> parser.parse("bye now"));
+        assertEquals("[WARNING] bye takes no arguments. Usage: bye", error.getMessage());
+    }
+
+    @Test
+    void unknownPrefixes_reportTheTokenInsteadOfAnUnrelatedFieldError() {
+        for (String input : List.of("add n/Y d/2027-12-02 s/11:00 e/12:00 t/tag",
+                "edit 1 x/1", "edit 1 e/12:00 t/tag")) {
+            ParseException error = assertThrows(ParseException.class, () -> parser.parse(input), input);
+            String prefix = input.contains("x/1") ? "x" : "t";
+            org.junit.jupiter.api.Assertions.assertTrue(
+                    error.getMessage().startsWith("[WARNING] Unknown parameter '" + prefix + "/'."),
+                    error.getMessage());
+            org.junit.jupiter.api.Assertions.assertFalse(error.getMessage().contains("Invalid time"));
+            org.junit.jupiter.api.Assertions.assertFalse(error.getMessage().contains("At least one field"));
         }
     }
 
     @Test
     void nonAsciiActivityNames_showNameWarningInsteadOfCommandWarning() {
-        for (String input : List.of("add n/复习 d/2099-12-12 s/09:00 e/10:00", "edit 1 n/படி")) {
+        for (String input : List.of("add n/复习 d/2030-12-12 s/09:00 e/10:00", "edit 1 n/படி")) {
             ParseException error = assertThrows(ParseException.class, () -> parser.parse(input), input);
             assertEquals("[WARNING] Please write the activity name in English (ASCII characters only).",
                     error.getMessage(), input);

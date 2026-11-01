@@ -238,7 +238,7 @@
         <module name="CommentsIndentation"/>
 
         <module name="Indentation">
-            <property name="caseIndent" value="4" />
+            <property name="caseIndent" value="0" />
             <property name="throwsIndent" value="8" />
         </module>
 

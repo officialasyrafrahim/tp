@@ -1,3 +1,6 @@
+/'
+// @@author lukelouyu
+'/
 @startuml
 title Find a shortest recorded accessible route
 skinparam backgroundColor white
@@ -12,7 +15,7 @@ hide footbox
 
 actor "User" as User
 participant "ui:Ui" as UI
-participant "ConsoleHelper" as Console
+participant "ConsoleHelper" as Console <<class>>
 participant ":RouteCommand" as Command
 participant ":ConnectionManager" as Manager
 participant ":DijkstraShortestPath" as Graph
@@ -33,7 +36,7 @@ Manager -> Graph : findRoute(from, to)
 activate Graph
 create participant ":DijkstraSolver" as Solver
 Graph -> Solver : DijkstraSolver(...)
-Graph -> Solver : dijkstra(adjacency, source)
+Graph -> Solver : computeShortestPaths(adjacency, source)
 activate Solver
 note over Graph, Solver
   Use a priority queue and settle vertices.

@@ -20,7 +20,7 @@ final class ActivityScheduleValidator {
 
     /**
      * Checks duplicates before overlaps and reports the conflicting chronological list index.
-     * A duplicate has the same name ignoring case and surrounding whitespace, date and time range.
+     * A duplicate has the same name ignoring case and repeated/surrounding whitespace, date and time range.
      * Ratings, demand and completion do not make a duplicate distinct or remove a time conflict.
      * Touching endpoints are allowed; an edit excludes only the activity being replaced.
      *
@@ -34,14 +34,16 @@ final class ActivityScheduleValidator {
         validate(candidate, activities, replacedActivity, false);
     }
 
-    /** Checks duplicates unconditionally, allowing a time overlap only when explicitly requested. */
-    static void validate(Activity candidate, ActivityList activities, Activity replacedActivity, boolean allowOverlap)
-            throws UniEnableException {
+    /**
+     * Checks duplicates unconditionally, allowing a time overlap only when explicitly requested.
+     */
+    static void validate(Activity candidate, ActivityList activities, Activity replacedActivity,
+            boolean isOverlapAllowed) throws UniEnableException {
         List<Activity> existing = activities.getCanonicalView();
         for (int index = 0; index < existing.size(); index++) {
             Activity activity = existing.get(index);
             if (activity != replacedActivity
-                    && activity.getName().strip().equalsIgnoreCase(candidate.getName().strip())
+                    && normalizeName(activity.getName()).equalsIgnoreCase(normalizeName(candidate.getName()))
                     && activity.getDate().equals(candidate.getDate())
                     && activity.getStartTime().equals(candidate.getStartTime())
                     && activity.getEndTime().equals(candidate.getEndTime())) {
@@ -49,7 +51,7 @@ final class ActivityScheduleValidator {
                         + describe(index + 1, activity));
             }
         }
-        if (allowOverlap) {
+        if (isOverlapAllowed) {
             return;
         }
         for (int index = 0; index < existing.size(); index++) {
@@ -61,6 +63,13 @@ final class ActivityScheduleValidator {
                         + " Add overlap/ALLOW to keep this intentional overlap.");
             }
         }
+    }
+
+    /**
+     * Collapses spacing for identity checks while preserving the user's stored/displayed name.
+     */
+    private static String normalizeName(String name) {
+        return name.strip().replaceAll("\\s+", " ");
     }
 
     /**

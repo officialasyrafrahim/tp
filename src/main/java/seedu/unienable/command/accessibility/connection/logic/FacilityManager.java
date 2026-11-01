@@ -28,7 +28,7 @@ public final class FacilityManager {
     /**
      * Returns all facilities in their original dataset order.
      *
-     * @return immutable list of facilities
+     * @return immutable list of facilities.
      */
     public List<Facility> getFacilities() {
         return facilities;
@@ -39,7 +39,7 @@ public final class FacilityManager {
      * Stable IDs take precedence over names if an identifier happens to match both.
      *
      * @param identifier stable facility ID (e.g., F01) or name (e.g., AS1).
-     * @return matching facility, or an empty Optional if no match exists
+     * @return matching facility, or an empty Optional if no match exists.
      */
     public Optional<Facility> findFacility(String identifier) {
         String query = Objects.requireNonNull(identifier, "identifier").strip();
@@ -63,7 +63,7 @@ public final class FacilityManager {
      * Finds facilities with an explicitly recorded YES status for the specified feature.
      *
      * @param type accessibility feature type.
-     * @return matching facilities in dataset order
+     * @return matching facilities in dataset order.
      */
     public List<Facility> findByFeature(FacilityFeature.Type type) {
         return findByFeature(type, AccessibilityStatus.YES);
@@ -76,7 +76,7 @@ public final class FacilityManager {
      *
      * @param type accessibility feature type.
      * @param status required recorded accessibility status.
-     * @return immutable list of matching facilities in dataset order
+     * @return immutable list of matching facilities in dataset order.
      */
     public List<Facility> findByFeature(FacilityFeature.Type type, AccessibilityStatus status) {
         Objects.requireNonNull(type, "type");

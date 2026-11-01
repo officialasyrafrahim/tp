@@ -17,7 +17,7 @@ import seedu.unienable.storage.Storage;
 
 //@@author officialasyrafrahim
 /**
- * Checks demand-order display and read-only behaviour for the list demand command.
+ * Checks demand-order display and read-only behavior for the list demand command.
  */
 class ListDemandCommandTest {
     private final Parser parser = new Parser();
@@ -30,11 +30,11 @@ class ListDemandCommandTest {
     };
 
     @Test
-    void execute_onEmptyList_showsDemandHeadingAndPlaceholder() throws Exception {
+    void execute_onEmptyList_showsOnlySorryMessage() throws Exception {
         var result = parser.parse("list demand").execute(activities, noWrites);
         assertFalse(result.isExit());
-        assertTrue(result.getMessage().startsWith("Activities by demand (HIGH to LOW):"));
-        assertTrue(result.getMessage().endsWith("[WARNING] No activities yet."));
+        assertTrue(result.getMessage().equals("Sorry, the activity list is empty."));
+        assertTrue(result.getMessage().endsWith("Sorry, the activity list is empty."));
     }
 
     @Test

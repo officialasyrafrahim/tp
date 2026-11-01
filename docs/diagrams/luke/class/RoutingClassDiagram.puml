@@ -1,3 +1,6 @@
+/'
+// @@author lukelouyu
+'/
 @startuml
 !pragma layout smetana
 title Accessible route search
@@ -23,10 +26,10 @@ class DijkstraShortestPath {
   +findRoute(...): Optional<Route>
 }
 class DijkstraSolver {
-  -dist: long[]
-  -previous: int[]
-  -previousConnection: Connection[]
-  ~dijkstra(...): void
+  -distances: long[]
+  -previousVertices: int[]
+  -previousConnections: Connection[]
+  ~computeShortestPaths(...): void
   ~getDistance(vertex: int): long
   ~getPrevious(vertex: int): int
   ~getPreviousConnection(vertex: int): Connection
@@ -39,15 +42,20 @@ class Connection {
   -from: String
   -to: String
   -distanceInMetres: int
-  -accessibility: AccessibilityStatus
+}
+enum AccessibilityStatus <<enumeration>> {
+  YES
+  NO
+  UNKNOWN
 }
 
 RouteCommand --> ConnectionManager : connectionManager
-ConnectionManager --> DijkstraShortestPath : shortestPath
+ConnectionManager *-- DijkstraShortestPath : shortestPath
 ConnectionManager --> "0..*" Connection : connections
 DijkstraShortestPath ..> DijkstraSolver : creates
 DijkstraShortestPath ..> Route : returns
 Route --> "0..*" Connection : segments
+Connection --> "1" AccessibilityStatus : accessibility
 
 note bottom of Route
   Nested record: DijkstraShortestPath.Route

@@ -73,14 +73,14 @@ public final class DijkstraShortestPath {
      *
      * @param from starting facility name, ignoring case and surrounding spaces.
      * @param to destination facility name, ignoring case and surrounding spaces.
-     * @return the route, or empty if the facilities cannot be connected with YES links
-     * @throws IllegalArgumentException if either endpoint is unknown or blank
+     * @return the route, or empty if the facilities cannot be connected with YES links.
+     * @throws IllegalArgumentException if either endpoint is unknown or blank.
      */
     public Optional<Route> findRoute(String from, String to) {
         int source = lookup(from, "startpoint");
         int destination = lookup(to, "endpoint");
         DijkstraSolver solver = new DijkstraSolver(names.size());
-        solver.dijkstra(adjacency, source);
+        solver.computeShortestPaths(adjacency, source);
         if (solver.getDistance(destination) == Long.MAX_VALUE) {
             return Optional.empty();
         }
@@ -122,7 +122,7 @@ public final class DijkstraShortestPath {
     }
 
     /**
-     * A path with its ordered facility names, original connections and total metres.
+     * A path with its ordered facility names, original connections and total meters.
      * Each segment joins the corresponding adjacent stops in either stored direction.
      * A long total accommodates routes whose combined distance exceeds the int range.
      *

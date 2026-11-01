@@ -22,7 +22,7 @@ public class EditCommand extends Command {
     private final int displayedIndex;
     private final Fields fields;
     private final Clock clock;
-    private final boolean allowOverlap;
+    private final boolean isOverlapAllowed;
 
     /**
      * Groups optional edit values; null means omitted and preserves the existing value.
@@ -47,10 +47,10 @@ public class EditCommand extends Command {
      * @param displayedIndex chronological index of the activity to edit.
      * @param fields supplied replacements; null components preserve their existing values.
      * @param clock time source used to reject ended activities and validate replacement times.
-     * @param allowOverlap whether this edit explicitly permits an intentional overlap.
+     * @param isOverlapAllowed whether this edit explicitly permits an intentional overlap.
      */
-    public EditCommand(int displayedIndex, Fields fields, Clock clock, boolean allowOverlap) {
-        this.allowOverlap = allowOverlap;
+    public EditCommand(int displayedIndex, Fields fields, Clock clock, boolean isOverlapAllowed) {
+        this.isOverlapAllowed = isOverlapAllowed;
         this.displayedIndex = displayedIndex;
         this.fields = Objects.requireNonNull(fields);
         this.clock = Objects.requireNonNull(clock);
@@ -65,7 +65,7 @@ public class EditCommand extends Command {
         Activity activity = activities.getByDisplayedIndex(displayedIndex);
         LocalDateTime now = LocalDateTime.now(clock);
         if (!LocalDateTime.of(activity.getDate(), activity.getEndTime()).isAfter(now)) {
-            throw warning("Activities that have ended cannot be edited.");
+            throw createWarning("Activities that have ended cannot be edited.");
         }
         String updatedName = fields.name() == null ? activity.getName() : fields.name();
         LocalDate updatedDate = fields.date() == null ? activity.getDate() : fields.date();
@@ -78,19 +78,21 @@ public class EditCommand extends Command {
 
         if (fields.date() != null || fields.startTime() != null || fields.endTime() != null) {
             if (!updatedEnd.isAfter(updatedStart)) {
-                throw warning("End time must be later than start time on the same day.");
+                throw createWarning("End time must be later than start time on the same day.");
             }
             LocalDateTime endDateTime = LocalDateTime.of(updatedDate, updatedEnd);
             if (!endDateTime.isAfter(now)) {
-                throw warning("Edited activity must end after the current local time.");
+                throw createWarning("Edited activity must end after the current local time.");
             }
         }
 
         Activity replacement = new Activity(updatedName, updatedDate, updatedStart, updatedEnd,
                 updatedDemand, activity.isDone(), updatedImportance, updatedUrgency, updatedCommitment);
-        if (fields.name() != null || fields.date() != null || fields.startTime() != null || fields.endTime() != null) {
-            ActivityScheduleValidator.validate(replacement, activities, activity, allowOverlap);
-        }
+        boolean isScheduleChanged = !updatedDate.equals(activity.getDate())
+                || !updatedStart.equals(activity.getStartTime()) || !updatedEnd.equals(activity.getEndTime());
+        // Renaming does not introduce a time clash; duplicate identity still needs checking.
+        ActivityScheduleValidator.validate(replacement, activities, activity,
+                isOverlapAllowed || !isScheduleChanged);
         activities.replaceByDisplayedIndex(displayedIndex, replacement);
         String message = "Edited activity: " + replacement.getName() + "\n"
                 + "Date: " + replacement.getDate() + "\n"
@@ -106,7 +108,7 @@ public class EditCommand extends Command {
         return rating == null ? "-" : rating.toString();
     }
 
-    private UniEnableException warning(String message) {
+    private UniEnableException createWarning(String message) {
         return new UniEnableException("[WARNING] " + message);
     }
 }

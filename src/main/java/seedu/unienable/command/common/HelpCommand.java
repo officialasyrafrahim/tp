@@ -3,6 +3,7 @@ package seedu.unienable.command.common;
 //@@author Atharva005
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import seedu.unienable.exception.ParseException;
 import seedu.unienable.model.ActivityList;
@@ -50,7 +51,7 @@ public class HelpCommand extends Command {
             Activity changes are saved automatically to data/activities.txt.
             """.stripTrailing();
 
-    private static final String EDIT_USAGE = "edit INDEX [n/NAME] [d/YYYY-MM-DD] [s/HH:mm] [e/HH:mm] "
+    private static final String EDIT_USAGE = "edit INDEX [n/NAME] [d/YYYY-MM-DD|today|tomorrow] [s/HH:mm] [e/HH:mm] "
             + "[dem/LOW|MEDIUM|HIGH] [imp/IMP] [urg/URG] [com/COM] [overlap/ALLOW]";
 
     /**
@@ -61,28 +62,30 @@ public class HelpCommand extends Command {
                     ADD - Create an activity
 
                     Usage:
-                      add n/NAME d/YYYY-MM-DD s/HH:mm e/HH:mm [dem/LOW|MEDIUM|HIGH] \
+                      add n/NAME d/YYYY-MM-DD|today|tomorrow s/HH:mm e/HH:mm [dem/LOW|MEDIUM|HIGH] \
                     [imp/IMP] [urg/URG] [com/COM] [overlap/ALLOW]
 
                     Details:
                       - n/, d/, s/, and e/ are required; prefixes may appear in any order.
                       - Names can contain spaces, but cannot be blank or contain | or line breaks.
                       - Names use printable ASCII only: English letters, digits, spaces, and punctuation.
-                      - Backslashes, commas, and single/double quotation marks are forbidden in names.
-                      - Slash / is allowed; /\\ and \\/ are forbidden. There is no slash-escape syntax.
+                      - Commas and apostrophes are allowed; double quotes and backslashes are forbidden.
+                      - Every / must follow a supported prefix at a field boundary; literal slashes are forbidden.
                       - Use a real YYYY-MM-DD date and 24-hour HH:mm times, such as 09:30.
-                      - End must be after start on the same day and after the current time.
+                      - d/today and d/tomorrow use this computer's date and save as that real date.
+                      - End must be after start on the same day and after now; ended activities cannot be added.
                       - Duplicate activities are rejected. Intentional overlaps require overlap/ALLOW.
                       - Back-to-back activities are allowed; completed activities still occupy their time.
                       - Demand defaults to MEDIUM; choose LOW, MEDIUM, or HIGH.
                       - IMP = importance; URG = urgency; COM = commitment.
                       - Ratings are optional whole numbers from 1 to 5; missing ratings display -.
                       - New activities start incomplete and save automatically.
-                      - Replace example dates with your planned date; end must still be after now.
+                      - Once an activity ends, it cannot be edited or rescheduled.
 
                     Examples:
                       add n/Study d/2030-12-01 s/10:00 e/11:00
                       add n/Study d/2030-12-01 s/10:00 e/11:00 dem/HIGH imp/5 urg/4 com/3
+                      add n/Study d/tomorrow s/10:00 e/11:00
                     """.stripTrailing()),
             Map.entry("edit", """
                     EDIT - Update an existing activity
@@ -95,8 +98,8 @@ public class HelpCommand extends Command {
                       - Supply at least one field; omitted fields and completion are preserved.
                       - Names, dates, times, demand, and ratings follow the same rules as add.
                       - Replacement names use printable ASCII only; | and line breaks are rejected.
-                      - Backslashes, commas, and single/double quotation marks are forbidden in names.
-                      - Slash / is allowed; /\\ and \\/ are forbidden. There is no slash-escape syntax.
+                      - Commas and apostrophes are allowed; double quotes and backslashes are forbidden.
+                      - Every / must follow a supported prefix at a field boundary; literal slashes are forbidden.
                       - Date/time edits must leave an end after start on the same day and after now.
                       - Duplicate edits are rejected. Use overlap/ALLOW to confirm an intentional time clash.
                       - Activities ending at or before now cannot be edited, including name or rating changes.
@@ -117,7 +120,7 @@ public class HelpCommand extends Command {
                       - Matching ignores letter case and searches for a literal substring.
                       - Multiword keywords are literal phrases, including their internal spaces.
                       - Results keep indexes from the full chronological list.
-                      - A search with no matches shows a warning and does not change activities.
+                      - A search with no matches shows the normal no-activities message without saving.
 
                     Examples:
                       find study
@@ -162,7 +165,7 @@ public class HelpCommand extends Command {
                       - IMP = importance (*), URG = urgency (!), COM = commitment (+).
                       - Priority score = URG x URG x (IMP + COM); N means a rating is missing.
                       - Missing ratings display -; demand L/M/H uses #/##/###.
-                      - An empty selected period shows a warning without an empty rating table.
+                      - An empty selected period shows normal feedback without a summary or rating table.
                       - Empty days inside a populated weekly view show a plain no-activities message.
                       - Run list to get indexes before editing, marking, or deleting activities.
 
@@ -196,7 +199,8 @@ public class HelpCommand extends Command {
                       - Shows one incomplete activity whose start is strictly after the current time.
                       - Excludes completed activities and activities starting now or earlier.
                       - The displayed index comes from the full chronological list.
-                      - Shows a warning when none qualifies; accepts no arguments.
+                      - If none qualifies, shows the normal no-activities message without a warning.
+                      - Accepts no arguments.
 
                     Examples:
                       next
@@ -281,7 +285,7 @@ public class HelpCommand extends Command {
 
                     Details:
                       - Supply two different facility names (AS1-AS8 or CLB), with from/ before to/.
-                      - Facility IDs such as F01 are not accepted as route endpoints.
+                      - Facility IDs F01-F09 are also accepted when facility data is available.
                       - Results show the route segments and total recorded distance in metres.
                       - Same endpoints, unknown facilities, or no confirmed accessible path produce warnings.
                       - Routes need loaded connection data and do not change activities.
@@ -327,6 +331,10 @@ public class HelpCommand extends Command {
                     """.stripTrailing())
     );
 
+    /** Activity topics whose commands can return normal empty-result feedback. */
+    private static final Set<String> EMPTY_RESULT_TOPICS = Set.of("edit", "find", "list", "view",
+            "overdue", "next", "mark", "unmark", "delete");
+
     private final String message;
 
     /**
@@ -343,12 +351,24 @@ public class HelpCommand extends Command {
      * @throws ParseException if the topic is not a supported command name.
      */
     public HelpCommand(String topic) throws ParseException {
-        String details = TOPIC_HELP.get(topic.toLowerCase(Locale.ROOT));
+        String normalizedTopic = topic.toLowerCase(Locale.ROOT);
+        String details = TOPIC_HELP.get(normalizedTopic);
         if (details == null) {
             throw new ParseException("[WARNING] Unknown help topic '" + topic
                     + "'.\nUsage: help [TOPIC]\nType help to see the available commands.");
         }
-        message = details + "\n\nType help to return to the command menu.";
+        String emptyMessage = switch (normalizedTopic) {
+        case "view" -> "Sorry, no activities fall within the selected period.";
+        case "find" -> "Sorry, no activity names match your search.";
+        case "overdue" -> "Sorry, no incomplete activities have ended.";
+        case "next" -> "Sorry, no upcoming incomplete activities exist.";
+        default -> ActivityList.NO_ACTIVITIES_MESSAGE;
+        };
+        String emptyResultHelp = EMPTY_RESULT_TOPICS.contains(normalizedTopic)
+                ? "\n\nIf no activity is available for this command, it displays this normal result:\n"
+                        + emptyMessage
+                : "";
+        message = details + emptyResultHelp + "\n\nType help to return to the command menu.";
     }
 
     @Override

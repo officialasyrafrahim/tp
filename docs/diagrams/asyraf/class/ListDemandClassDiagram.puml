@@ -1,4 +1,6 @@
-'@@author officialasyrafrahim
+/'
+// @@author officialasyrafrahim
+'/
 @startuml
 !pragma layout smetana
 title Demand-ordered activity listing
@@ -14,7 +16,7 @@ hide circle
 hide empty members
 
 abstract class Command {
-  +execute(...): CommandResult
+  {abstract} +execute(...): CommandResult
 }
 class Parser {
   +parse(input: String): Command
@@ -40,7 +42,7 @@ class CommandResult {
   +didChangeActivities(): boolean
 }
 Command <|-- ListDemandCommand
-Parser ..> ListDeleteCommandParser : delegates list
+Parser *-- ListDeleteCommandParser : delegates list
 ListDeleteCommandParser ..> ListDemandCommand : creates
 ListDemandCommand ..> ActivityList : queries
 ListDemandCommand ..> ActivityListFormatter : formats
@@ -56,4 +58,6 @@ note bottom of CommandResult
   ConsoleHelper displays the message without saving.
 end note
 @enduml
-'@@author
+/'
+// @@author
+'/

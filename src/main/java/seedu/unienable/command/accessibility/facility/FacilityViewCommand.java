@@ -35,8 +35,8 @@ public class FacilityViewCommand extends Command {
      *
      * @param activities activity collection, not modified by this command.
      * @param storage activity storage, not used by this command.
-     * @return non-exiting result containing facility details
-     * @throws UniEnableException if the facility is unknown
+     * @return non-exiting result containing facility details.
+     * @throws UniEnableException if the facility is unknown.
      */
     @Override
     public CommandResult execute(ActivityList activities, Storage storage) throws UniEnableException {

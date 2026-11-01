@@ -42,29 +42,29 @@ class EditCommandTest {
 
     @Test
     void execute_changesOnlySuppliedFieldsAndPreservesCompletion() throws Exception {
-        add("Old name", "2099-01-02", "09:00", "10:00", "LOW");
+        add("Old name", "2030-01-02", "09:00", "10:00", "LOW");
         parser.parse("mark 1").execute(activities, noWrites);
 
         var result = parser.parse("edit 1 n/New name dem/HIGH").execute(activities, noWrites);
 
         assertTrue(result.didChangeActivities());
         String message = parser.parse("list").execute(activities, noWrites).getMessage();
-        assertTrue(message.contains("1. New name (2099-01-02, 09:00-10:00) [HIGH] [X]"));
+        assertTrue(message.contains("1. New name (2030-01-02, 09:00-10:00) [HIGH] [X]"));
     }
 
     @Test
     void execute_reschedulesFutureActivity() throws Exception {
-        add("Meeting", "2099-01-02", "09:00", "10:00", "MEDIUM");
+        add("Meeting", "2030-01-02", "09:00", "10:00", "MEDIUM");
 
-        parser.parse("edit 1 d/2099-01-03 s/14:00 e/15:00").execute(activities, noWrites);
+        parser.parse("edit 1 d/2030-01-03 s/14:00 e/15:00").execute(activities, noWrites);
 
         assertTrue(parser.parse("list").execute(activities, noWrites).getMessage()
-                .contains("1. Meeting (2099-01-03, 14:00-15:00) [MEDIUM]"));
+                .contains("1. Meeting (2030-01-03, 14:00-15:00) [MEDIUM]"));
     }
 
     @Test
     void execute_changesOneRatingAndPreservesOtherRatings() throws Exception {
-        parser.parse("add n/Meeting d/2099-01-02 s/09:00 e/10:00 imp/5 urg/4 com/2")
+        parser.parse("add n/Meeting d/2030-01-02 s/09:00 e/10:00 imp/5 urg/4 com/2")
                 .execute(activities, noWrites);
 
         parser.parse("edit 1 com/3").execute(activities, noWrites);
@@ -77,7 +77,7 @@ class EditCommandTest {
 
     @Test
     void execute_nameOnlyEdit_preservesUnsetRatings() throws Exception {
-        add("Original", "2099-01-02", "09:00", "10:00", "LOW");
+        add("Original", "2030-01-02", "09:00", "10:00", "LOW");
 
         parser.parse("edit 1 n/Updated").execute(activities, noWrites);
 
@@ -91,18 +91,18 @@ class EditCommandTest {
     @TestFactory
     Stream<DynamicTest> execute_singleFieldEdits_preserveEveryOmittedValue() {
         String[][] cases = {
-            {"n/Updated", "Updated|2099-01-02|09:00|10:00|LOW|true|2|3|4"},
-            {"d/2099-01-03", "Original|2099-01-03|09:00|10:00|LOW|true|2|3|4"},
-            {"s/09:30", "Original|2099-01-02|09:30|10:00|LOW|true|2|3|4"},
-            {"e/11:00", "Original|2099-01-02|09:00|11:00|LOW|true|2|3|4"},
-            {"dem/HIGH", "Original|2099-01-02|09:00|10:00|HIGH|true|2|3|4"},
-            {"imp/5", "Original|2099-01-02|09:00|10:00|LOW|true|5|3|4"},
-            {"urg/1", "Original|2099-01-02|09:00|10:00|LOW|true|2|1|4"},
-            {"com/2", "Original|2099-01-02|09:00|10:00|LOW|true|2|3|2"}
+            {"n/Updated", "Updated|2030-01-02|09:00|10:00|LOW|true|2|3|4"},
+            {"d/2030-01-03", "Original|2030-01-03|09:00|10:00|LOW|true|2|3|4"},
+            {"s/09:30", "Original|2030-01-02|09:30|10:00|LOW|true|2|3|4"},
+            {"e/11:00", "Original|2030-01-02|09:00|11:00|LOW|true|2|3|4"},
+            {"dem/HIGH", "Original|2030-01-02|09:00|10:00|HIGH|true|2|3|4"},
+            {"imp/5", "Original|2030-01-02|09:00|10:00|LOW|true|5|3|4"},
+            {"urg/1", "Original|2030-01-02|09:00|10:00|LOW|true|2|1|4"},
+            {"com/2", "Original|2030-01-02|09:00|10:00|LOW|true|2|3|2"}
         };
         return Stream.of(cases).map(scenario -> DynamicTest.dynamicTest(scenario[0], () -> {
             Parser timedParser = new Parser(Clock.fixed(Instant.parse("2026-10-28T12:00:00Z"), ZoneOffset.UTC));
-            Activity original = new Activity("Original", LocalDate.of(2099, 1, 2),
+            Activity original = new Activity("Original", LocalDate.of(2030, 1, 2),
                     LocalTime.of(9, 0), LocalTime.of(10, 0), DemandLevel.LOW, true, 2, 3, 4);
             ActivityList current = new ActivityList(List.of(original));
 
@@ -121,12 +121,12 @@ class EditCommandTest {
     @Test
     void execute_rejectedPartialTimeEdits_preserveAllHistoricalFields() throws Exception {
         Parser timedParser = new Parser(Clock.fixed(Instant.parse("2026-10-28T12:00:00Z"), ZoneOffset.UTC));
-        Activity original = new Activity("Historical", LocalDate.of(2000, 1, 1),
+        Activity original = new Activity("Historical", LocalDate.of(2026, 1, 1),
                 LocalTime.of(9, 0), LocalTime.of(10, 0), DemandLevel.HIGH, true, 5, 4, 3);
         activities.addActivity(original);
 
         for (String command : List.of("edit 1 s/11:00", "edit 1 e/11:00", "edit 1 d/2026-10-28 e/11:00",
-                "edit 1 n/Changed", "edit 1 dem/LOW", "edit 1 imp/1 urg/1 com/1", "edit 1 d/2099-01-01")) {
+                "edit 1 n/Changed", "edit 1 dem/LOW", "edit 1 imp/1 urg/1 com/1", "edit 1 d/2030-01-01")) {
             UniEnableException exception = assertThrows(UniEnableException.class,
                     () -> timedParser.parse(command).execute(activities, noWrites), command);
             assertEquals("[WARNING] Activities that have ended cannot be edited.", exception.getMessage(), command);
@@ -141,13 +141,13 @@ class EditCommandTest {
 
     @Test
     void execute_rejectsInvalidResultWithoutChangingActivity() throws Exception {
-        add("Meeting", "2099-01-02", "09:00", "10:00", "MEDIUM");
+        add("Meeting", "2030-01-02", "09:00", "10:00", "MEDIUM");
 
         assertThrows(UniEnableException.class,
                 () -> parser.parse("edit 1 s/14:00 e/13:00").execute(activities, noWrites));
 
         String message = parser.parse("list").execute(activities, noWrites).getMessage();
-        assertTrue(message.contains("1. Meeting (2099-01-02, 09:00-10:00) [MEDIUM] [ ]"));
+        assertTrue(message.contains("1. Meeting (2030-01-02, 09:00-10:00) [MEDIUM] [ ]"));
         assertFalse(message.contains("14:00-13:00"));
     }
 

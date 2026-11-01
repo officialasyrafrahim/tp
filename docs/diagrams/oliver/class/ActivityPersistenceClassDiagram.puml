@@ -1,4 +1,6 @@
-'@@author Oliver-koh
+/'
+// @@author Oliver-koh
+'/
 @startuml
 !pragma layout smetana
 title Conditional activity persistence
@@ -25,8 +27,8 @@ class CommandResult {
 class Storage {
   -activityFile: Path
   -warnings: List<String>
-  -loadedCorruptData: boolean
-  -unsavedChanges: boolean
+  -hasLoadedCorruptData: boolean
+  -hasUnsavedChanges: boolean
   +markUnsavedChanges(): void
   +hasUnsavedChanges(): boolean
   +load(): ActivityList
@@ -60,9 +62,11 @@ note bottom of Storage
   Valid historical activities remain loadable.
   New-input restrictions belong to parsers and commands.
   Validation warnings do not request a save.
-  Failed saves keep unsavedChanges set and warn after each command.
+  Failed saves keep hasUnsavedChanges set and warn after each command.
   Only a successful save clears the flag; bye retries before exiting.
   A failed exit retry keeps the console open.
 end note
 @enduml
-'@@author
+/'
+// @@author
+'/

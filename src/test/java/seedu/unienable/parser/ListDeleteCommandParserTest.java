@@ -32,7 +32,7 @@ class ListDeleteCommandParserTest {
         Command command = parser.parse("list");
         assertInstanceOf(ListCommand.class, command);
         assertTrue(command.execute(new ActivityList(), unusedByListCommands).getMessage()
-                .endsWith("[WARNING] No activities yet."));
+                .endsWith("Sorry, the activity list is empty."));
     }
 
     @Test
