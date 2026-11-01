@@ -16,8 +16,8 @@ section, and regeneration commands.
 
 Lou Yu Luke's activity-creation class diagram and name/parameter validation
 pairs are in the `luke` folder. Atharva Rege's add sequence, calendar, help,
-and schedule validation diagrams are in `atharva`. Class/sequence diagrams use
-`.png`, and the campus connectivity graph uses `.svg`.
+schedule validation, and date parsing diagrams are in `atharva`. Class/sequence
+diagrams use `.png`, and the campus connectivity graph uses `.svg`.
 
 <!-- @@author Atharva005 -->
 
@@ -25,6 +25,10 @@ and schedule validation diagrams are in `atharva`. Class/sequence diagrams use
 
 ## Atharva Rege
 
+- [ActivityDateParserClassDiagram.png](atharva/class/ActivityDateParserClassDiagram.png)
+  shows the date parser shared by add and edit.
+- [ActivityDateParsingSequence.png](atharva/sequence/ActivityDateParsingSequence.png)
+  shows `today`, `tomorrow`, calendar-date, and invalid `d/` values during add.
 - [ActivityScheduleValidatorClassDiagram.png](atharva/class/ActivityScheduleValidatorClassDiagram.png)
   shows duplicate and overlap validation before add/edit changes.
 - [ActivityScheduleValidationSequence.png](atharva/sequence/ActivityScheduleValidationSequence.png)

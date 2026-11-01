@@ -24,13 +24,10 @@ import seedu.unienable.model.enums.DemandLevel;
  */
 public class AddCommandParser {
     private static final Pattern PREFIX = Pattern.compile("(?i)(?<!\\S)(overlap|dem|imp|urg|com|n|d|s|e)/");
-    private static final Pattern DATE_PATTERN = Pattern.compile("\\d{4}-\\d{2}-\\d{2}");
     private static final Pattern TIME_PATTERN = Pattern.compile("\\d{2}:\\d{2}");
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("uuuu-MM-dd")
-            .withResolverStyle(ResolverStyle.STRICT);
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm")
             .withResolverStyle(ResolverStyle.STRICT);
-    private static final String USAGE = "Usage: add n/NAME d/YYYY-MM-DD s/HH:mm e/HH:mm "
+    private static final String USAGE = "Usage: add n/NAME d/YYYY-MM-DD|today|tomorrow s/HH:mm e/HH:mm "
             + "[dem/LOW|MEDIUM|HIGH] [imp/IMP] [urg/URG] [com/COM] [overlap/ALLOW]";
 
     private final Clock clock;
@@ -81,12 +78,9 @@ public class AddCommandParser {
         LocalTime startTime;
         LocalTime endTime;
         try {
-            if (!DATE_PATTERN.matcher(fields.get("d")).matches()) {
-                throw new DateTimeParseException("Wrong date format", fields.get("d"), 0);
-            }
-            date = LocalDate.parse(fields.get("d"), DATE_FORMAT);
+            date = ActivityDateParser.parse(fields.get("d"), clock);
         } catch (DateTimeParseException exception) {
-            throw createUsageError("Invalid date. Use YYYY-MM-DD and a real calendar date.");
+            throw createUsageError(ActivityDateParser.INVALID_DATE_MESSAGE);
         }
         try {
             startTime = parseTime(fields.get("s"));

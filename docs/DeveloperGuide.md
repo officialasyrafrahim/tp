@@ -142,8 +142,9 @@ a `CommandResult` containing a message, an exit flag and an activity-change flag
 `ConsoleHelper` uses these flags to coordinate automatic saving and shutdown.
 Read-only commands leave the activity-change flag unset.
 
-Time-sensitive edit validation and queries share an injected `Clock`. Production uses
-the local clock; tests supply a fixed clock to reproduce boundary cases.
+The `today` and `tomorrow` date words, time-sensitive edit validation and queries
+share an injected `Clock`. Production uses the local clock; tests supply a fixed
+clock to reproduce boundary cases.
 
 ### Model component
 
@@ -294,6 +295,30 @@ failures leave the collection unchanged.
 </div>
 
 [Enlarge diagram](images/atharva/sequence/AddActivitySequence.png) | [PlantUML source](diagrams/atharva/sequence/AddActivitySequence.puml).
+
+#### Date parsing
+
+`ActivityDateParser` converts the `d/` value for both add and edit, so the two
+commands accept the same input: a strict `YYYY-MM-DD` date, `today` or `tomorrow`.
+The words ignore letter case and resolve against the parser's `Clock`. The result
+is an ordinary `LocalDate`, so the same ended-activity and schedule checks apply.
+
+Resolving the word during parsing keeps each saved record on a fixed date. Storing
+`today` itself would move the activity to a new day at every restart.
+
+<div role="region" aria-label="Date parsing classes (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/atharva/class/ActivityDateParserClassDiagram.png" alt="Date parsing classes" style="max-width: none;">
+</div>
+
+[Enlarge diagram](images/atharva/class/ActivityDateParserClassDiagram.png) | [PlantUML source](diagrams/atharva/class/ActivityDateParserClassDiagram.puml).
+
+<div role="region" aria-label="Reading a date value (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/atharva/sequence/ActivityDateParsingSequence.png" alt="Reading a date value" style="max-width: none;">
+</div>
+
+[Enlarge diagram](images/atharva/sequence/ActivityDateParsingSequence.png) | [PlantUML source](diagrams/atharva/sequence/ActivityDateParsingSequence.puml).
 
 #### Activity state snapshot
 
@@ -516,7 +541,8 @@ See the [UG time queries](UserGuide.md#viewing-the-next-activity-next).
 > existing end date/time is checked before any replacement is built. An end at
 > or before local now rejects every edit, even if the requested date is in the future.
 
-`EditCommandParser` collects changes in immutable `EditCommand.Fields`.
+`EditCommandParser` collects changes in immutable `EditCommand.Fields`, reading
+`d/` through the shared [`ActivityDateParser`](#date-parsing).
 `EditCommand` selects the activity by its chronological index and checks the
 clock once. Activities ending at or before now reject every edit, including
 metadata changes and rescheduling into the future.
@@ -938,6 +964,7 @@ These tests check input validation at three levels:
 | Level | Tests | What they verify |
 | --- | --- | --- |
 | Individual validator | `ActivityNameValidatorTest` | The [name rules](#ascii-command-name-validation): allowed character boundaries, forbidden punctuation and blank names. |
+| Individual validator | `ActivityDateParserTest` | The `d/` values: date words, letter case, end-of-year rollover and rejected values, directly and through add and edit. |
 | Command parsing | Add/edit parser tests | Both parsers apply the shared rules and report the appropriate warning. |
 | Complete application | `UniEnableProcessTest` | Commands work through the real entry point, including input rejection, parameter and schedule checks, UTF-8 display of stored names, and persistence across restarts. |
 
@@ -1028,7 +1055,7 @@ Feature responsibility follows the table below. See the [team pages](team/README
 | Team member | Feature area | V1.0 work | V2.0 work | Diagram contribution |
 | --- | --- | --- | --- | --- |
 | [Lou Yu Luke](team/lukelouyu.md) | Ratings, shared validation and accessibility | Exit (`bye`); [facility listing, lookup, and feature search](#facility-lookup). | [Accessible routes](#accessible-route-search); [optional ratings](#optional-ratings-integration); [command/name validation](#ascii-command-name-validation); [duplicate/clash checks](#activity-schedule-validation). | [Activity-creation class diagram, name/parameter validation, facility lookup and routing](diagrams/README.md#luke): five class diagrams and four sequence diagrams. Additional diagrams: [architecture](diagrams/README.md#architecture) and [campus connectivity graph](diagrams/README.md#connectivity-graph). |
-| [Atharva Rege](team/atharva005.md) | Activity creation, calendar views and help | [Adding activities](#adding-activities) (`add`) and command help (`help`). | [Calendar dashboards](#calendar-dashboards) (`view today`, `view tomorrow`, `view week`); [topic help](#categorized-and-topic-help) (`help TOPIC`). | [Add sequence, calendar dashboards, topic help, and schedule validation](diagrams/README.md#atharva): eight diagrams (three class/sequence pairs, the add sequence and an activity-state object diagram). |
+| [Atharva Rege](team/atharva005.md) | Activity creation, calendar views and help | [Adding activities](#adding-activities) (`add`) and command help (`help`). | [Calendar dashboards](#calendar-dashboards) (`view today`, `view tomorrow`, `view week`); [topic help](#categorized-and-topic-help) (`help TOPIC`); [date parsing](#date-parsing) (`d/today`, `d/tomorrow`). | [Add sequence, calendar dashboards, topic help, schedule validation, and date parsing](diagrams/README.md#atharva): ten diagrams (four class/sequence pairs, the add sequence and an activity-state object diagram). |
 | [Muhammad Asyraf Bin Abdul Rahim](team/officialasyrafrahim.md) | Activity views and deletion | [Chronological/demand listing and deletion](#activity-views-and-deletion) (`list`, `list demand`, `delete`). | [Priority, overdue, and next views](#activity-views-and-deletion) (`list priority`, `overdue`, `next`). | [Chronological listing, demand listing, deletion, priority, overdue, and next](diagrams/README.md#asyraf): six class/sequence pairs. |
 | [Koh Li Wei Oliver](team/oliver-koh.md) | Completion, storage, editing and search | [Persistence and recovery](#completion-and-persistence); completion changes (`mark`, `unmark`). | [Editing](#editing-activities) (`edit`); [Find Activities](#name-search) (`find`); failed-save retry on exit (`bye`). | [Editing, Find Activities, marking, unmarking, and persistence](diagrams/README.md#oliver): five class/sequence pairs. |
 
@@ -1195,6 +1222,25 @@ unset. Read-only commands and repeated completion requests must leave the saved
 file unchanged. Use a fresh folder for independent tests below.
 
 <!-- @@author lukelouyu -->
+
+#### Date shortcuts
+
+In a fresh test folder, before 22:30, enter:
+
+```text
+add n/Manasi's birthday party d/today s/19:00 e/22:30 dem/low imp/4 com/4 urg/2
+add n/TCM Field Trip at Thong Chai Hospital d/tomorrow s/14:00 e/17:00 dem/high imp/5 com/2 urg/3
+list
+edit 1 d/tomorrow
+add n/Past outing d/yesterday s/09:00 e/10:00
+list
+bye
+```
+
+The first `list` shows the party on today's date and the field trip on tomorrow's.
+The edit moves the party to tomorrow, so the second `list` shows the field trip
+first. `d/yesterday` produces an invalid-date warning. `data/activities.txt` must
+contain real dates, not the words `today` or `tomorrow`.
 
 #### Printable-ASCII input and historical UTF-8 output
 

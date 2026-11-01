@@ -1,0 +1,77 @@
+/'
+// @@author Atharva005
+'/
+@startuml
+title Read the d/ value while adding an activity
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 14
+skinparam ParticipantBackgroundColor #EDF3F8
+skinparam ParticipantBorderColor #526477
+skinparam ArrowColor #526477
+skinparam sequenceMessageAlign center
+hide footbox
+
+participant "ConsoleHelper" as Console <<class>>
+participant "parser:Parser" as Parser
+participant "ActivityDateParser" as DateParser <<class>>
+participant "LocalDate" as LocalDate <<class>>
+
+Console -> Parser : parse(input)
+activate Parser
+create participant ":AddCommandParser" as AddParser
+Parser -> AddParser : AddCommandParser(clock)
+Parser -> AddParser : parse(arguments)
+activate AddParser
+note right of AddParser
+  Prefix, required-field and name
+  checks finish before the date is read.
+end note
+AddParser -> DateParser : parse(value, clock)
+activate DateParser
+
+alt value is today, ignoring letter case
+  DateParser -> LocalDate : now(clock)
+  LocalDate --> DateParser : current date
+  DateParser --> AddParser : current date
+else value is tomorrow, ignoring letter case
+  DateParser -> LocalDate : now(clock)
+  LocalDate --> DateParser : current date
+  note right of DateParser
+    Add one day with plusDays(1).
+  end note
+  DateParser --> AddParser : next date
+else any other value
+  DateParser -> DateParser : parseCalendarDate(value)
+  alt value is a real YYYY-MM-DD date
+    DateParser --> AddParser : that date
+  else value is not supported
+    DateParser --> AddParser : throws DateTimeParseException
+    AddParser --> Parser : throws ParseException(invalid date, usage)
+    Parser --> Console : propagate warning
+  end
+end
+deactivate DateParser
+
+opt date was read
+  note right of AddParser
+    Validate the times with the resolved date,
+    so an activity that has ended is still rejected.
+  end note
+  create participant ":AddCommand" as Add
+  AddParser -> Add : AddCommand(name, date, ...)
+  AddParser --> Parser : addCommand
+  deactivate AddParser
+  Parser --> Console : addCommand
+  deactivate Parser
+end
+
+note over Console, LocalDate
+  EditCommandParser makes the same parse(value, clock) call when d/ is supplied.
+  The activity stores the resolved date, never the word today or tomorrow.
+end note
+@enduml
+/'
+// @@author
+'/

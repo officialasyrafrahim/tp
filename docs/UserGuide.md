@@ -36,11 +36,11 @@ then `java -jar build/libs/unienable.jar`. Use Java 25 for both commands.
 | --- | --- |
 | Placeholders | Words in UPPER_CASE are placeholders; replace them with your own values. |
 | Optional fields | Square brackets in command formats indicate optional fields; do not type them. |
-| Letter case | Command words, prefixes, demand levels, feature types, statuses, and hub codes are case-insensitive. Activity names preserve their capitalization. |
+| Letter case | Command words, prefixes, demand levels, `today` and `tomorrow`, feature types, statuses, and hub codes are case-insensitive. Activity names preserve their capitalization. |
 | Field order | For `add` and `edit`, fields can appear in any order. Names can contain spaces. For `edit`, put the activity index before the fields. |
 | Field separators | Separate fields with whitespace (for example, `n/Meeting d/2026-12-01`). Do not put text before the first field. |
 | Command entry | Enter each command on one line, including all optional fields. |
-| Dates and times | Dates use `YYYY-MM-DD`, such as `2026-12-01`; times use 24-hour `HH:mm`. |
+| Dates and times | Dates use `YYYY-MM-DD`, such as `2026-12-01`; `add` and `edit` also accept `today` and `tomorrow`. Times use 24-hour `HH:mm`. |
 | Activity indexes | Activity indexes start at 1. Change commands (`delete`, `edit`, `mark`, and `unmark`) use indexes from chronological `list` output. `list demand`, `find`, `list priority`, `overdue`, and `next` retain full chronological indexes, even when some indexes are missing from the results. Run `list` before changing an activity; adding, deleting, or rescheduling can change indexes. |
 | Calendar numbering | Calendar dashboards (`view today`, `view tomorrow`, and `view week`) number only their selected period. Run `list` to get indexes for changing those activities. |
 | Sample outputs | Sample outputs below omit the application's horizontal borders. The activity walkthrough, from `add` through `delete`, starts with an empty list and runs in order. Additional rating examples follow the walkthrough. If you try them after the example dates, replace the dates with future dates. |
@@ -81,7 +81,7 @@ Add an incomplete activity with a date, time, and optional demand and ratings.
 Format:
 
 ```text
-add n/NAME d/YYYY-MM-DD s/HH:mm e/HH:mm [dem/LOW|MEDIUM|HIGH] [imp/IMP] [urg/URG] [com/COM] [overlap/ALLOW]
+add n/NAME d/YYYY-MM-DD|today|tomorrow s/HH:mm e/HH:mm [dem/LOW|MEDIUM|HIGH] [imp/IMP] [urg/URG] [com/COM] [overlap/ALLOW]
 ```
 
 `n/`, `d/`, `s/`, and `e/` are required and must each appear once with a value.
@@ -110,6 +110,26 @@ do not enter a literal `-`. Empty values, duplicate prefixes, ratings outside
 long-form aliases such as `urgency/`, `importance/`, `commitment/`, and
 `priority/` are rejected instead of becoming part of the activity name.
 Every `/` in add/edit input must belong to a supported field prefix.
+
+Date shortcuts:
+
+Use `d/today` or `d/tomorrow` instead of typing the date. The app reads your
+computer's date when you enter the command and saves it as an ordinary date, so
+the activity stays on that day. For example, on 2026-11-01:
+
+| Input | Date saved |
+| --- | --- |
+| `d/today` | 2026-11-01 |
+| `d/tomorrow` | 2026-11-02 |
+
+```text
+add n/Manasi's birthday party d/today s/19:00 e/22:30 dem/low imp/4 com/4 urg/2
+add n/TCM Field Trip at Thong Chai Hospital d/tomorrow s/14:00 e/17:00 dem/high imp/5 com/2 urg/3
+```
+
+Leave these two commands out if you are following the walkthrough below, which
+starts with an empty list. `d/today` follows the same rule as any other date, so
+an activity that has already ended today is rejected.
 
 <!-- @@author -->
 
@@ -393,7 +413,7 @@ Change selected fields while preserving omitted fields and completion status.
 Format:
 
 ```text
-edit INDEX [n/NAME] [d/YYYY-MM-DD] [s/HH:mm] [e/HH:mm] [dem/LOW|MEDIUM|HIGH] [imp/IMP] [urg/URG] [com/COM] [overlap/ALLOW]
+edit INDEX [n/NAME] [d/YYYY-MM-DD|today|tomorrow] [s/HH:mm] [e/HH:mm] [dem/LOW|MEDIUM|HIGH] [imp/IMP] [urg/URG] [com/COM] [overlap/ALLOW]
 ```
 
 > **Important: ended activities are locked.** Once an activity's end is at or
@@ -407,6 +427,8 @@ edit INDEX [n/NAME] [d/YYYY-MM-DD] [s/HH:mm] [e/HH:mm] [dem/LOW|MEDIUM|HIGH] [im
   printable-ASCII, prefix, pipe, and line-break rules as `add`.
 - Omitted fields, including ratings, keep their existing values. An omitted
   demand does not reset to MEDIUM. Ratings accept 1 to 5; `-` cannot clear a rating.
+- `d/today` and `d/tomorrow` work as they do in `add`. For example, `edit 2 d/tomorrow`
+  moves the activity to tomorrow's date and keeps its times.
 - If any date/time field is supplied, the combined old and new values must form
   a same-day activity with its end strictly after its start and the current local
   time. Activities whose existing end is at or before the current local time cannot
@@ -806,7 +828,7 @@ you can do in each case.
 | Rejected input | Activities and the saved file remain unchanged. |
 | <!-- @@author Oliver-koh --> Repeated `mark` or `unmark` | The app warns that completion is already in the requested state. No activities are changed or saved. <!-- @@author --> |
 | Missing or duplicate fields | Supply each required field once. Use `help add` or `help edit` to check the format. |
-| Invalid date or time | Use a real calendar date and two-digit hours and minutes, such as `09:30` rather than `9:30`. |
+| Invalid date or time | Use a real calendar date, `today`, or `tomorrow`, and two-digit hours and minutes, such as `09:30` rather than `9:30`. |
 | Unknown facility | Use a facility listed by `facility list`. |
 | Activity index outside the list | Run `list` and choose an index shown in its output. |
 | Duplicate activity | Change the entry so it does not duplicate an existing activity. `overlap/ALLOW` does not permit duplicates. |
@@ -880,9 +902,9 @@ Use `help TOPIC` with any command name below for detailed instructions, such as
 | Command | Purpose |
 | --- | --- |
 | `help [TOPIC]` / `bye` | Show categorized or detailed command help / exit |
-| `add n/NAME d/YYYY-MM-DD s/HH:mm e/HH:mm [dem/LOW\|MEDIUM\|HIGH] [imp/IMP] [urg/URG] [com/COM] [overlap/ALLOW]` | Add an activity with optional ratings |
+| `add n/NAME d/YYYY-MM-DD\|today\|tomorrow s/HH:mm e/HH:mm [dem/LOW\|MEDIUM\|HIGH] [imp/IMP] [urg/URG] [com/COM] [overlap/ALLOW]` | Add an activity with optional ratings |
 | `list` / `list demand` | View activities by time / demand |
-| `edit INDEX [n/NAME] [d/YYYY-MM-DD] [s/HH:mm] [e/HH:mm] [dem/LOW\|MEDIUM\|HIGH] [imp/IMP] [urg/URG] [com/COM] [overlap/ALLOW]` | Update supplied activity fields; preserve omitted fields and completion |
+| `edit INDEX [n/NAME] [d/YYYY-MM-DD\|today\|tomorrow] [s/HH:mm] [e/HH:mm] [dem/LOW\|MEDIUM\|HIGH] [imp/IMP] [urg/URG] [com/COM] [overlap/ALLOW]` | Update supplied activity fields; preserve omitted fields and completion |
 | `find KEYWORD` | Search activity names and retain chronological list indexes |
 | `list priority` | View all activities by combined priority score |
 | `view today` / `view tomorrow` / `view week` | Show today's, tomorrow's, or the next seven days' dashboard |
