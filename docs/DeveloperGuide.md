@@ -142,8 +142,9 @@ a `CommandResult` containing a message, an exit flag and an activity-change flag
 `ConsoleHelper` uses these flags to coordinate automatic saving and shutdown.
 Read-only commands leave the activity-change flag unset.
 
-Time-sensitive edit validation and queries share an injected `Clock`. Production uses
-the local clock; tests supply a fixed clock to reproduce boundary cases.
+The `today` and `tomorrow` date words, time-sensitive edit validation and queries
+share an injected `Clock`. Production uses the local clock; tests supply a fixed
+clock to reproduce boundary cases.
 
 ### Model component
 
@@ -276,6 +277,12 @@ failures leave the collection unchanged.
 <!-- @@author -->
 
 <!-- @@author lukelouyu -->
+
+`ActivityDateParser` converts the `d/` value for both add and edit, so the two
+commands accept the same input: a strict `YYYY-MM-DD` date, `today` or `tomorrow`.
+The words ignore letter case and resolve against the parser's `Clock`. The result
+is an ordinary `LocalDate`, so the same ended-activity and schedule checks apply,
+and the saved record keeps that date instead of moving with the calendar.
 
 <div role="region" aria-label="Activity creation classes (scroll horizontally)"
      tabindex="0" style="max-width: 100%; overflow-x: auto;">
@@ -516,7 +523,8 @@ See the [UG time queries](UserGuide.md#viewing-the-next-activity-next).
 > existing end date/time is checked before any replacement is built. An end at
 > or before local now rejects every edit, even if the requested date is in the future.
 
-`EditCommandParser` collects changes in immutable `EditCommand.Fields`.
+`EditCommandParser` collects changes in immutable `EditCommand.Fields`, reading
+`d/` through the same `ActivityDateParser` as [add](#adding-activities).
 `EditCommand` selects the activity by its chronological index and checks the
 clock once. Activities ending at or before now reject every edit, including
 metadata changes and rescheduling into the future.
@@ -938,6 +946,7 @@ These tests check input validation at three levels:
 | Level | Tests | What they verify |
 | --- | --- | --- |
 | Individual validator | `ActivityNameValidatorTest` | The [name rules](#ascii-command-name-validation): allowed character boundaries, forbidden punctuation and blank names. |
+| Individual validator | `ActivityDateParserTest` | The `d/` values: date words, letter case, end-of-year rollover and rejected values, directly and through add and edit. |
 | Command parsing | Add/edit parser tests | Both parsers apply the shared rules and report the appropriate warning. |
 | Complete application | `UniEnableProcessTest` | Commands work through the real entry point, including input rejection, parameter and schedule checks, UTF-8 display of stored names, and persistence across restarts. |
 
@@ -1195,6 +1204,25 @@ unset. Read-only commands and repeated completion requests must leave the saved
 file unchanged. Use a fresh folder for independent tests below.
 
 <!-- @@author lukelouyu -->
+
+#### Date shortcuts
+
+In a fresh test folder, before 22:30, enter:
+
+```text
+add n/Manasi's birthday party d/today s/19:00 e/22:30 dem/low imp/4 com/4 urg/2
+add n/TCM Field Trip at Thong Chai Hospital d/tomorrow s/14:00 e/17:00 dem/high imp/5 com/2 urg/3
+list
+edit 1 d/tomorrow
+add n/Past outing d/yesterday s/09:00 e/10:00
+list
+bye
+```
+
+The first `list` shows the party on today's date and the field trip on tomorrow's.
+The edit moves the party to tomorrow, so the second `list` shows the field trip
+first. `d/yesterday` produces an invalid-date warning. `data/activities.txt` must
+contain real dates, not the words `today` or `tomorrow`.
 
 #### Printable-ASCII input and historical UTF-8 output
 

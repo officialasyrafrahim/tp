@@ -51,7 +51,7 @@ public class HelpCommand extends Command {
             Activity changes are saved automatically to data/activities.txt.
             """.stripTrailing();
 
-    private static final String EDIT_USAGE = "edit INDEX [n/NAME] [d/YYYY-MM-DD] [s/HH:mm] [e/HH:mm] "
+    private static final String EDIT_USAGE = "edit INDEX [n/NAME] [d/YYYY-MM-DD|today|tomorrow] [s/HH:mm] [e/HH:mm] "
             + "[dem/LOW|MEDIUM|HIGH] [imp/IMP] [urg/URG] [com/COM] [overlap/ALLOW]";
 
     /**
@@ -62,7 +62,7 @@ public class HelpCommand extends Command {
                     ADD - Create an activity
 
                     Usage:
-                      add n/NAME d/YYYY-MM-DD s/HH:mm e/HH:mm [dem/LOW|MEDIUM|HIGH] \
+                      add n/NAME d/YYYY-MM-DD|today|tomorrow s/HH:mm e/HH:mm [dem/LOW|MEDIUM|HIGH] \
                     [imp/IMP] [urg/URG] [com/COM] [overlap/ALLOW]
 
                     Details:
@@ -72,6 +72,7 @@ public class HelpCommand extends Command {
                       - Commas and apostrophes are allowed; double quotes and backslashes are forbidden.
                       - Every / must follow a supported prefix at a field boundary; literal slashes are forbidden.
                       - Use a real YYYY-MM-DD date and 24-hour HH:mm times, such as 09:30.
+                      - d/today and d/tomorrow use this computer's date and save as that real date.
                       - End must be after start on the same day and after now; ended activities cannot be added.
                       - Duplicate activities are rejected. Intentional overlaps require overlap/ALLOW.
                       - Back-to-back activities are allowed; completed activities still occupy their time.
@@ -84,6 +85,7 @@ public class HelpCommand extends Command {
                     Examples:
                       add n/Study d/2030-12-01 s/10:00 e/11:00
                       add n/Study d/2030-12-01 s/10:00 e/11:00 dem/HIGH imp/5 urg/4 com/3
+                      add n/Study d/tomorrow s/10:00 e/11:00
                     """.stripTrailing()),
             Map.entry("edit", """
                     EDIT - Update an existing activity

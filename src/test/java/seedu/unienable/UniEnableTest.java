@@ -385,6 +385,38 @@ class UniEnableTest {
             assertArrayEquals(original, Files.readAllBytes(file));
         }
     }
+
+    /**
+     * Replays the Developer Guide's date-shortcut manual test. The fixed clock makes
+     * today 2026-10-14 and tomorrow 2026-10-15, whatever time the test actually runs.
+     */
+    @Test
+    void dateWords_addEditListAndSaveRealDates(@TempDir Path tempDir) throws Exception {
+        Path file = tempDir.resolve("date-words.txt");
+        String output = consoleAtPath("""
+                add n/Manasi's birthday party d/today s/19:00 e/22:30 dem/low imp/4 com/4 urg/2
+                add n/TCM Field Trip at Thong Chai Hospital d/tomorrow s/14:00 e/17:00 dem/high imp/5 com/2 urg/3
+                list
+                edit 1 d/tomorrow
+                add n/Past outing d/yesterday s/09:00 e/10:00
+                list
+                bye
+                """, file);
+
+        // Split at the edit so each list is checked against the state it should show.
+        String[] sections = output.split("Edited activity:", 2);
+        String fieldTrip = "TCM Field Trip at Thong Chai Hospital (2026-10-15, 14:00-17:00) [HIGH] [ ]";
+        assertTrue(sections[0].contains("1. Manasi's birthday party (2026-10-14, 19:00-22:30) [LOW] [ ]"), output);
+        assertTrue(sections[0].contains("2. " + fieldTrip), output);
+        assertTrue(sections[1].contains("[WARNING] Invalid date. Use a real YYYY-MM-DD date, today, or tomorrow."),
+                output);
+        assertTrue(sections[1].contains("1. " + fieldTrip), output);
+        assertTrue(sections[1].contains("2. Manasi's birthday party (2026-10-15, 19:00-22:30) [LOW] [ ]"), output);
+        assertFalse(output.contains("Past outing"), output);
+        assertEquals(List.of("Manasi's birthday party|2026-10-15|19:00|22:30|LOW|false|4|2|4",
+                "TCM Field Trip at Thong Chai Hospital|2026-10-15|14:00|17:00|HIGH|false|5|3|2"),
+                Files.readAllLines(file));
+    }
     //@@author
 
     //@@author Oliver-koh
