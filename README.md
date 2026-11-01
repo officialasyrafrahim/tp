@@ -71,8 +71,8 @@ maps PlantUML sources to [rendered images](docs/images/README.md) and explains h
 Luke contributes the activity-creation class diagram, the name and parameter
 validation class/sequence pairs, and the
 [architecture diagram](docs/diagrams/luke/architecture/ArchitectureDiagram.puml).
-Atharva contributes the add sequence, calendar dashboards, topic help, and
-schedule validation diagrams. See the diagram index for each source/image pair.
+Atharva contributes the add sequence, calendar dashboards, topic help, schedule
+validation, and date parsing diagrams. See the diagram index for each source/image pair.
 
 For documentation publication and link checks, see the
 [publication notes](docs/README.md#publication-and-link-checks).

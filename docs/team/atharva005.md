@@ -17,6 +17,7 @@ I contributed activity creation, daily/weekly calendar dashboards, and command h
 #### Enhancements implemented
 
 - **Activity creation:** `add` accepts named fields in any order and multiword activity names. It validates required fields, calendar dates, and same-day time ranges before insertion. Students can record ongoing or future activities whose end is after the current time, with optional demand and ratings. Duplicate and overlap checks protect the schedule, and rejected input leaves activities unchanged ([PR #11](https://github.com/AY2627S1-CS2113-T10-4/tp/pull/11), [PR #23](https://github.com/AY2627S1-CS2113-T10-4/tp/pull/23)).
+- **Date shortcuts:** `add` and `edit` accept `d/today` and `d/tomorrow`. The shared `ActivityDateParser` turns each word into a real date using the injectable clock, so saved activities stay on that day and the existing schedule checks still apply ([PR #100](https://github.com/AY2627S1-CS2113-T10-4/tp/pull/100)).
 - **Calendar dashboards:** `view today`, `view tomorrow`, and `view week` combine date filtering, daily schedules, completion summaries, demand counts, and rating charts without changing stored activities. Students can inspect commitments and workload together; an injectable clock makes date selection reproducible ([PR #47](https://github.com/AY2627S1-CS2113-T10-4/tp/pull/47)).
 - **Command discovery:** `help` displays a categorized command menu, while `help TOPIC` provides syntax, rules, and examples. Both are read-only, allowing users to discover commands without executing them ([PR #21](https://github.com/AY2627S1-CS2113-T10-4/tp/pull/21)).
 
@@ -27,8 +28,8 @@ Contributed JUnit tests for activity creation, parser field handling, invalid in
 #### Documentation contributions
 
 - **User Guide:** [Adding activities](../UserGuide.md#adding-an-activity-add), [calendar dashboards](../UserGuide.md#viewing-calendar-dashboards-view), and [command help](../UserGuide.md#viewing-command-help-help), including formats, examples, validation rules, and empty-period behavior.
-- **Developer Guide:** [Adding activities](../DeveloperGuide.md#adding-activities), [calendar dashboards](../DeveloperGuide.md#calendar-dashboards), and [categorized/topic help](../DeveloperGuide.md#categorized-and-topic-help), covering the parser-command-model flow and read-only views.
-- **UML diagrams:** Contributed the add sequence, three class/sequence pairs for calendar dashboards, topic help, and activity-schedule validation, and an illustrative activity-state object diagram. These eight sources and rendered images are listed in [my diagram index](../diagrams/README.md#atharva). The activity-creation class diagram and name/parameter validation pairs are credited to Luke.
+- **Developer Guide:** [Adding activities](../DeveloperGuide.md#adding-activities), [date parsing](../DeveloperGuide.md#date-parsing), [calendar dashboards](../DeveloperGuide.md#calendar-dashboards), and [categorized/topic help](../DeveloperGuide.md#categorized-and-topic-help), covering the parser-command-model flow and read-only views.
+- **UML diagrams:** Contributed the add sequence, four class/sequence pairs for calendar dashboards, topic help, activity-schedule validation, and date parsing, and an illustrative activity-state object diagram. These ten sources and rendered images are listed in [my diagram index](../diagrams/README.md#atharva). The activity-creation class diagram and name/parameter validation pairs are credited to Luke.
 
 #### Team-based tasks
 

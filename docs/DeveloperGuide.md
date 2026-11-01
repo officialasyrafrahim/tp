@@ -278,12 +278,6 @@ failures leave the collection unchanged.
 
 <!-- @@author lukelouyu -->
 
-`ActivityDateParser` converts the `d/` value for both add and edit, so the two
-commands accept the same input: a strict `YYYY-MM-DD` date, `today` or `tomorrow`.
-The words ignore letter case and resolve against the parser's `Clock`. The result
-is an ordinary `LocalDate`, so the same ended-activity and schedule checks apply,
-and the saved record keeps that date instead of moving with the calendar.
-
 <div role="region" aria-label="Activity creation classes (scroll horizontally)"
      tabindex="0" style="max-width: 100%; overflow-x: auto;">
   <img src="images/luke/class/ActivityCreationClassDiagram.png" alt="Activity creation classes" style="max-width: none;">
@@ -301,6 +295,30 @@ and the saved record keeps that date instead of moving with the calendar.
 </div>
 
 [Enlarge diagram](images/atharva/sequence/AddActivitySequence.png) | [PlantUML source](diagrams/atharva/sequence/AddActivitySequence.puml).
+
+#### Date parsing
+
+`ActivityDateParser` converts the `d/` value for both add and edit, so the two
+commands accept the same input: a strict `YYYY-MM-DD` date, `today` or `tomorrow`.
+The words ignore letter case and resolve against the parser's `Clock`. The result
+is an ordinary `LocalDate`, so the same ended-activity and schedule checks apply.
+
+Resolving the word during parsing keeps each saved record on a fixed date. Storing
+`today` itself would move the activity to a new day at every restart.
+
+<div role="region" aria-label="Date parsing classes (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/atharva/class/ActivityDateParserClassDiagram.png" alt="Date parsing classes" style="max-width: none;">
+</div>
+
+[Enlarge diagram](images/atharva/class/ActivityDateParserClassDiagram.png) | [PlantUML source](diagrams/atharva/class/ActivityDateParserClassDiagram.puml).
+
+<div role="region" aria-label="Reading a date value (scroll horizontally)"
+     tabindex="0" style="max-width: 100%; overflow-x: auto;">
+  <img src="images/atharva/sequence/ActivityDateParsingSequence.png" alt="Reading a date value" style="max-width: none;">
+</div>
+
+[Enlarge diagram](images/atharva/sequence/ActivityDateParsingSequence.png) | [PlantUML source](diagrams/atharva/sequence/ActivityDateParsingSequence.puml).
 
 #### Activity state snapshot
 
@@ -524,7 +542,7 @@ See the [UG time queries](UserGuide.md#viewing-the-next-activity-next).
 > or before local now rejects every edit, even if the requested date is in the future.
 
 `EditCommandParser` collects changes in immutable `EditCommand.Fields`, reading
-`d/` through the same `ActivityDateParser` as [add](#adding-activities).
+`d/` through the shared [`ActivityDateParser`](#date-parsing).
 `EditCommand` selects the activity by its chronological index and checks the
 clock once. Activities ending at or before now reject every edit, including
 metadata changes and rescheduling into the future.
@@ -1037,7 +1055,7 @@ Feature responsibility follows the table below. See the [team pages](team/README
 | Team member | Feature area | V1.0 work | V2.0 work | Diagram contribution |
 | --- | --- | --- | --- | --- |
 | [Lou Yu Luke](team/lukelouyu.md) | Ratings, shared validation and accessibility | Exit (`bye`); [facility listing, lookup, and feature search](#facility-lookup). | [Accessible routes](#accessible-route-search); [optional ratings](#optional-ratings-integration); [command/name validation](#ascii-command-name-validation); [duplicate/clash checks](#activity-schedule-validation). | [Activity-creation class diagram, name/parameter validation, facility lookup and routing](diagrams/README.md#luke): five class diagrams and four sequence diagrams. Additional diagrams: [architecture](diagrams/README.md#architecture) and [campus connectivity graph](diagrams/README.md#connectivity-graph). |
-| [Atharva Rege](team/atharva005.md) | Activity creation, calendar views and help | [Adding activities](#adding-activities) (`add`) and command help (`help`). | [Calendar dashboards](#calendar-dashboards) (`view today`, `view tomorrow`, `view week`); [topic help](#categorized-and-topic-help) (`help TOPIC`). | [Add sequence, calendar dashboards, topic help, and schedule validation](diagrams/README.md#atharva): eight diagrams (three class/sequence pairs, the add sequence and an activity-state object diagram). |
+| [Atharva Rege](team/atharva005.md) | Activity creation, calendar views and help | [Adding activities](#adding-activities) (`add`) and command help (`help`). | [Calendar dashboards](#calendar-dashboards) (`view today`, `view tomorrow`, `view week`); [topic help](#categorized-and-topic-help) (`help TOPIC`); [date parsing](#date-parsing) (`d/today`, `d/tomorrow`). | [Add sequence, calendar dashboards, topic help, schedule validation, and date parsing](diagrams/README.md#atharva): ten diagrams (four class/sequence pairs, the add sequence and an activity-state object diagram). |
 | [Muhammad Asyraf Bin Abdul Rahim](team/officialasyrafrahim.md) | Activity views and deletion | [Chronological/demand listing and deletion](#activity-views-and-deletion) (`list`, `list demand`, `delete`). | [Priority, overdue, and next views](#activity-views-and-deletion) (`list priority`, `overdue`, `next`). | [Chronological listing, demand listing, deletion, priority, overdue, and next](diagrams/README.md#asyraf): six class/sequence pairs. |
 | [Koh Li Wei Oliver](team/oliver-koh.md) | Completion, storage, editing and search | [Persistence and recovery](#completion-and-persistence); completion changes (`mark`, `unmark`). | [Editing](#editing-activities) (`edit`); [Find Activities](#name-search) (`find`); failed-save retry on exit (`bye`). | [Editing, Find Activities, marking, unmarking, and persistence](diagrams/README.md#oliver): five class/sequence pairs. |
 

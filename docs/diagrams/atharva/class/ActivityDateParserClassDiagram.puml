@@ -1,0 +1,50 @@
+/'
+// @@author Atharva005
+'/
+@startuml
+!pragma layout smetana
+title Date parsing shared by add and edit
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 14
+skinparam classAttributeIconSize 0
+skinparam classBackgroundColor #EDF3F8
+skinparam classBorderColor #526477
+skinparam ArrowColor #526477
+hide circle
+hide empty members
+
+class Parser {
+  -clock: Clock
+  +parse(input: String): Command
+}
+class AddCommandParser {
+  -clock: Clock
+  +parse(arguments: String): AddCommand
+}
+class EditCommandParser {
+  -clock: Clock
+  +parse(arguments: String): EditCommand
+}
+class ActivityDateParser <<package-private>> {
+  {static} ~INVALID_DATE_MESSAGE: String
+  {static} ~parse(value: String, clock: Clock): LocalDate
+  {static} -parseCalendarDate(value: String): LocalDate
+}
+
+Parser ..> AddCommandParser : creates with clock
+Parser ..> EditCommandParser : creates with clock
+AddCommandParser ..> ActivityDateParser : reads d/ value
+EditCommandParser ..> ActivityDateParser : reads d/ value
+
+note bottom of ActivityDateParser
+  today and tomorrow ignore letter case and use the supplied clock.
+  Any other value must be a real YYYY-MM-DD date.
+  An unsupported value throws DateTimeParseException, and each
+  command parser adds its own usage line to the warning.
+end note
+@enduml
+/'
+// @@author
+'/
